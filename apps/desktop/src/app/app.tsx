@@ -14,10 +14,13 @@ const ArchitecturePage = lazy(() =>
 const DocumentsPage = lazy(() => import('../pages/documents').then((m) => ({ default: m.DocumentsPage })));
 const GitPage = lazy(() => import('../pages/git').then((m) => ({ default: m.GitPage })));
 const GithubPage = lazy(() => import('../pages/github').then((m) => ({ default: m.GithubPage })));
+const WorkPage = lazy(() => import('../pages/work').then((m) => ({ default: m.WorkPage })));
 
 function View() {
   const { view } = viewRoute.useParams();
   switch (view) {
+    case 'work':
+      return <WorkPage />;
     case 'architecture':
       return <ArchitecturePage />;
     case 'git':
@@ -39,7 +42,15 @@ function View() {
   }
 }
 const rootRoute = createRootRoute({ component: Shell });
-const viewRoute = createRoute({ getParentRoute: () => rootRoute, path: '/$view', component: View });
+const viewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/$view',
+  component: View,
+  validateSearch: (search: Record<string, unknown>): { workId?: string; reference?: string } => ({
+    workId: typeof search.workId === 'string' ? search.workId : undefined,
+    reference: typeof search.reference === 'string' ? search.reference : undefined,
+  }),
+});
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Overview });
 const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, viewRoute]) });
 declare module '@tanstack/react-router' {

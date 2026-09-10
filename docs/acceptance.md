@@ -45,6 +45,16 @@ The browser fixture overview rendered in 1,181 ms on the two-worker run, versus 
 
 ## Remaining acceptance gates
 
+### Functional increment: local work items
+
+The work-item lifecycle is implemented across desktop, CLI and MCP: create from a source, explicit state, criteria, typed links, candidate confirmation/rejection, local notes and paginated history. Database schema 2 preserves existing settings and records. Revision conflicts and changed-payload retries fail without partial writes.
+
+Validation for this increment: all six Nx check/lint/test targets passed without cache; 18 Rust tests, 12 Playwright scenarios and the real CLI/socket/MCP integration test passed. The native app created a real local Worklens delivery item; CLI reads returned that item, CLI added its PR/worktree/agent links, and native Reload displayed revision 4 with all three links and their history. The app and DMG were built and strict ad-hoc code-signature verification passed. No native performance claim is made.
+
+See [work-item semantics and remaining functional scope](work-items.md). This does not claim delivery of complete PR impact, expected validations, structured decisions or work-context export.
+
+### Initial alpha gates still tracked
+
 1. Register/install a read-only GitHub App, enable Device Flow and provide its public Client ID. Complete the live recipe in [GitHub setup](github.md), including expiration/revocation and a fork PR.
 2. Verify the complete native PR → changed components → exact CI → worktree → declared agent path with that connection. The equivalent mocked React path passes; it is not a substitute for this gate.
 3. Record native first-known-state timing on a quiet machine and repeat under representative repository load.

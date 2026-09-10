@@ -7,6 +7,7 @@ import { RelationGraph } from '../components/relation-graph';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { WorkEntry } from '../components/work-entry';
 import { query } from '../lib/api';
 import { useGit, useSession } from '../lib/session';
 
@@ -162,6 +163,15 @@ export function GitPage() {
                 <div>
                   <p className="text-sm font-medium">{tree.branch ?? 'Detached HEAD'}</p>
                   <p className="mt-1 font-mono text-xs text-muted-foreground">{tree.path}</p>
+                  <WorkEntry
+                    title={tree.branch ?? 'Detached worktree'}
+                    source={{
+                      kind: 'worktree',
+                      reference: tree.path,
+                      status: 'confirmed',
+                      reason: 'Explicitly selected worktree',
+                    }}
+                  />
                 </div>
                 <div className="flex gap-2">
                   {tree.locked && <Badge>locked</Badge>}

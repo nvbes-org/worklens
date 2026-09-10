@@ -180,6 +180,15 @@ impl Service {
                 crate::service_context::search(self, &repo, text(p, "query")?).await
             }
             Operation::Agents => Ok(serde_json::to_value(self.db()?.agents(&repo.id)?)?),
+            Operation::WorkList
+            | Operation::WorkShow
+            | Operation::WorkCreate
+            | Operation::WorkUpdate
+            | Operation::WorkLink
+            | Operation::WorkUnlink
+            | Operation::WorkNote => {
+                crate::service_work::dispatch(self, &repo, &request.operation, p).await
+            }
             Operation::AgentStart
             | Operation::AgentUpdate
             | Operation::AgentHeartbeat

@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import type { WorkItem, WorkEvent, WorkMutation } from '@worklens/contracts';
 
 export async function seed(page: Page) {
   await page.addInitScript(() => {
@@ -12,9 +13,27 @@ export async function seed(page: Page) {
     const envelope=(data:unknown)=>({data,page:1,perPage:30,provenance:source});
     const section=(data:unknown)=>({data,error:null});
     let connected=false;
+    const workItems = new Map<string,WorkItem>();
+    const workEvents = new Map<string,WorkEvent[]>();
     Object.assign(window,{__WORKLENS_TRANSPORT__:async (request:{operation:string;params:Record<string,unknown>})=>{
       let data:unknown=null;
       switch(request.operation){
+        case 'work_list':data={items:[...workItems.values()].filter(w=>(!request.params.reference||w.links.some(l=>l.reference===request.params.reference))&&(!request.params.state||w.state===request.params.state)),nextOffset:null};break;
+        case 'work_show':data={item:workItems.get(String(request.params.id)),events:workEvents.get(String(request.params.id))??[],nextOffset:null};break;
+        case 'work_create':case 'work_update':case 'work_link':case 'work_unlink':case 'work_note':{
+          const p=request.params as unknown as WorkMutation;
+          const c=p.change;
+          let item=workItems.get(p.id);
+          if(item&&item.revision!==p.expectedRevision)return {version:1,data:null,error:'Revision conflict: reload the work item'};
+          if(c.action==='create')item={id:p.id,repositoryId:repo.id,title:c.title,objective:c.objective,criteria:c.criteria,state:'todo',revision:0,links:c.links,createdAt:source.collectedAt,updatedAt:source.collectedAt};
+          if(!item)return {version:1,data:null,error:'Work item not found'};
+          if(c.action==='update')Object.assign(item,{title:c.title,objective:c.objective,criteria:c.criteria,state:c.state});
+          if(c.action==='link')item.links=[...item.links.filter(l=>l.kind!==c.link.kind||l.reference!==c.link.reference),c.link];
+          if(c.action==='unlink')item.links=item.links.filter(l=>l.kind!==c.kind||l.reference!==c.reference);
+          item={...item,revision:item.revision+1};workItems.set(item.id,item);
+          workEvents.set(item.id,[{eventId:p.eventId,revision:item.revision,action:c.action,actor:p.actor,createdAt:source.collectedAt,details:c},...(workEvents.get(item.id)??[])]);
+          data={applied:true,item};break;
+        }
         case 'recent':data=[repo];break;
         case 'open':data=repo;break;
         case 'git':case 'status':data=git;break;

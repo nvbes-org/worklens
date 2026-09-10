@@ -55,6 +55,10 @@ worklens agents --repo /absolute/path/to/repository
 
 States: active, waiting, blocked; finish sets completed or failed (`failed:true`). Terminal sessions cannot resume; start a new ID. CLI generates missing event IDs and start-session IDs, but callers should persist their own IDs for retryable delivery. Retry exactly the same event ID and payload after uncertain delivery. A changed payload with a reused ID fails. Send a heartbeat about every 30–60 seconds while present; do not fabricate progress. No process scraping or Codex app internals are used.
 
+## Local work items
+
+`worklens work list|show|create|update|link|unlink|note` manages local objectives. MCP exposes read operations through `worklens_query` and mutations through `worklens_work`. See [work-item contracts and examples](work-items.md) for revisions, event IDs, source links and pagination.
+
 ## Selected context
 
 ```sh

@@ -37,6 +37,13 @@ pub enum Operation {
     Run,
     Logs,
     Search,
+    WorkList,
+    WorkShow,
+    WorkCreate,
+    WorkUpdate,
+    WorkLink,
+    WorkUnlink,
+    WorkNote,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

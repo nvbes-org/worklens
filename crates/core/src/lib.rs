@@ -2,11 +2,13 @@ pub mod agents;
 pub mod graph;
 pub mod model;
 pub mod protocol;
+pub mod work;
 
 pub use agents::*;
 pub use graph::*;
 pub use model::*;
 pub use protocol::*;
+pub use work::*;
 
 pub fn now() -> String {
     chrono::Utc::now().to_rfc3339()

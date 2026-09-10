@@ -20,6 +20,25 @@ export type Graph = { nodes: Array<Project>, edges: Array<Edge>, sources: Array<
 export type Impact = { direct: Array<string>, dependants: Array<string>, warning: string, };
 export type AgentState = "active" | "waiting" | "blocked" | "completed" | "failed";
 export type AgentSession = { id: string, repositoryId: string, worktree: string, tool: string, objective: string, state: AgentState, message: string, lastSeen: string, presence: string, issue: string | null, pr: string | null, };
-export type Operation = "open" | "recent" | "trust" | "status" | "git" | "diff" | "projects" | "graph" | "tasks" | "impact" | "documents" | "document" | "context" | "doctor" | "agents" | "agent_start" | "agent_update" | "agent_heartbeat" | "agent_finish" | "github_auth_start" | "github_auth_poll" | "github_auth_status" | "github_logout" | "issues" | "prs" | "pr" | "issue" | "ci" | "run" | "logs" | "search";
+export type Operation = "open" | "recent" | "trust" | "status" | "git" | "diff" | "projects" | "graph" | "tasks" | "impact" | "documents" | "document" | "context" | "doctor" | "agents" | "agent_start" | "agent_update" | "agent_heartbeat" | "agent_finish" | "github_auth_start" | "github_auth_poll" | "github_auth_status" | "github_logout" | "issues" | "prs" | "pr" | "issue" | "ci" | "run" | "logs" | "search" | "work_list" | "work_show" | "work_create" | "work_update" | "work_link" | "work_unlink" | "work_note";
+export type WorkState = "todo" | "in_progress" | "waiting" | "blocked" | "completed" | "abandoned";
+export type WorkLinkKind = "pr" | "issue" | "worktree" | "agent" | "component";
+export type WorkLinkStatus = "candidate" | "confirmed" | "rejected";
+export type WorkLink = { kind: WorkLinkKind, reference: string, status: WorkLinkStatus, reason: string, };
+export type WorkItem = { id: string, repositoryId: string, title: string, objective: string, criteria: string, state: WorkState, revision: number, links: Array<WorkLink>, createdAt: string, updatedAt: string, };
+export type WorkEvent = { eventId: string, revision: number, action: string,
+/**
+ * Attribution is explicitly supplied by the caller, not an authenticated identity.
+ */
+actor: string, createdAt: string, details: JsonValue, };
+export type WorkDetail = { item: WorkItem, events: Array<WorkEvent>, nextOffset: number | null, };
+export type WorkList = { items: Array<WorkItem>, nextOffset: number | null, };
+export type WorkResult = { applied: boolean, item: WorkItem, };
+export type WorkChange = { "action": "create", title: string, objective: string, criteria: string, links: Array<WorkLink>, } | { "action": "update", title: string, objective: string, criteria: string, state: WorkState, } | { "action": "link", link: WorkLink, } | { "action": "unlink", kind: WorkLinkKind, reference: string, } | { "action": "note", text: string, };
+export type WorkMutation = { id: string, eventId: string, actor: string,
+/**
+ * Zero for creation; otherwise the last revision read by the caller.
+ */
+expectedRevision: number, change: WorkChange, };
 export type Request = { version: number, operation: Operation, repository: string | null, params: JsonValue, };
 export type Response = { version: number, data: JsonValue, error: string | null, };

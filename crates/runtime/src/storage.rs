@@ -5,12 +5,16 @@ use std::path::Path;
 use worklens_core::{AgentSession, Repository};
 
 pub struct Store {
-    connection: Connection,
+    pub(crate) connection: Connection,
 }
 
 impl Store {
     pub fn open(path: &Path) -> Result<Self> {
         let connection = Connection::open(path)?;
+        let version: u32 = connection.query_row("PRAGMA user_version", [], |r| r.get(0))?;
+        if version > 2 {
+            return Err(error("Database is newer than this Worklens build"));
+        }
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
             CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -18,7 +22,12 @@ impl Store {
             CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, collected_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS agents (id TEXT PRIMARY KEY, repository_id TEXT NOT NULL, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, session_id TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL);
-            PRAGMA user_version=1;")?;
+            ")?;
+        connection.execute_batch("BEGIN IMMEDIATE;
+            CREATE TABLE IF NOT EXISTS work_items (repository_id TEXT NOT NULL, id TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(repository_id,id));
+            CREATE TABLE IF NOT EXISTS work_events (repository_id TEXT NOT NULL, event_id TEXT NOT NULL, work_id TEXT NOT NULL, revision INTEGER NOT NULL, payload TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(repository_id,event_id), UNIQUE(repository_id,work_id,revision));
+            PRAGMA user_version=2;
+            COMMIT;")?;
         Ok(Self { connection })
     }
 

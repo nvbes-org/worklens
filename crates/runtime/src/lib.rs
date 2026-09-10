@@ -10,7 +10,9 @@ pub mod paths;
 pub mod service;
 pub mod service_agents;
 pub mod service_context;
+pub mod service_work;
 pub mod storage;
+pub mod storage_work;
 pub mod transport;
 
 #[derive(Debug, thiserror::Error)]

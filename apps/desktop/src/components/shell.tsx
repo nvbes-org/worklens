@@ -25,6 +25,7 @@ import { Welcome } from './welcome';
 
 const navigation = [
   { view: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { view: 'work', label: 'Work items', icon: CircleDot },
   { view: 'architecture', label: 'Architecture', icon: Network },
   { view: 'git', label: 'Git & worktrees', icon: GitBranch },
   { view: 'pull-requests', label: 'Pull requests', icon: GitPullRequest },

@@ -9,9 +9,9 @@ use worklens_core::{Operation, PROTOCOL_VERSION, Request};
     about = "Local repository and agent observability. All queries use the shared Worklens service."
 )]
 struct Cli {
-    #[arg(value_parser = ["serve", "mcp", "open", "recent", "trust", "status", "projects", "graph", "tasks", "impact", "git", "diff", "documents", "document", "issues", "prs", "pr", "issue", "ci", "run", "logs", "context", "doctor", "agents", "agent", "search"])]
+    #[arg(value_parser = ["serve", "mcp", "open", "recent", "trust", "status", "projects", "graph", "tasks", "impact", "git", "diff", "documents", "document", "issues", "prs", "pr", "issue", "ci", "run", "logs", "context", "doctor", "agents", "agent", "search", "work"])]
     command: String,
-    /// For agent: start, update, heartbeat or finish. For open: repository path.
+    /// Agent action, work action (list/show/create/update/link/unlink/note), or repository path for open.
     argument: Option<String>,
     #[arg(long)]
     repo: Option<String>,
@@ -50,6 +50,15 @@ async fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             return Err("Invalid agent action".into());
         }
         format!("agent_{action}")
+    } else if cli.command == "work" {
+        let action = cli
+            .argument
+            .as_deref()
+            .ok_or("work requires list, show, create, update, link, unlink or note")?;
+        if !["list", "show", "create", "update", "link", "unlink", "note"].contains(&action) {
+            return Err("Invalid work action".into());
+        }
+        format!("work_{action}")
     } else {
         cli.command.clone()
     };

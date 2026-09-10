@@ -1,5 +1,6 @@
 import { Empty, ErrorNotice, ExternalLink, Loading, PageTitle } from '../components/common';
 import { Badge } from '../components/ui/badge';
+import { WorkEntry } from '../components/work-entry';
 import { useAgents } from '../lib/session';
 
 export function AgentsPage() {
@@ -34,6 +35,15 @@ export function AgentsPage() {
               <p className="mt-3 text-sm">{agent.objective}</p>
               {agent.message && <p className="mt-2 text-sm text-muted-foreground">{agent.message}</p>}
               <p className="mt-3 font-mono text-xs text-muted-foreground">{agent.worktree}</p>
+              <WorkEntry
+                title={agent.objective.slice(0, 200)}
+                source={{
+                  kind: 'agent',
+                  reference: agent.id,
+                  status: 'confirmed',
+                  reason: 'Explicitly selected agent session',
+                }}
+              />
               <div className="mt-3 flex gap-3">
                 {agent.pr?.startsWith('https://github.com/') && (
                   <ExternalLink url={agent.pr}>Pull request</ExternalLink>

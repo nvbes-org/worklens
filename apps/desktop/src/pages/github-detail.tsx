@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { ErrorNotice, ExternalLink, Loading, Source } from '../components/common';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { WorkEntry } from '../components/work-entry';
 import { list, num, openUrl, query, record, str } from '../lib/api';
 import { useAgents, useData, useGit, useGraph, useSession } from '../lib/session';
 import type { GithubEnvelope } from './github';
@@ -91,6 +92,17 @@ export function GithubDetail({ kind, number }: { kind: 'pr' | 'issue' | 'run'; n
                 {str(item.body)}
               </ReactMarkdown>
             </div>
+          )}
+          {(kind === 'pr' || kind === 'issue') && str(item.html_url) && (
+            <WorkEntry
+              title={str(item.title)}
+              source={{
+                kind,
+                reference: str(item.html_url),
+                status: 'confirmed',
+                reason: 'Explicitly selected GitHub source',
+              }}
+            />
           )}
           {kind === 'pr' && (
             <section className="mb-6 rounded-xl border bg-primary/5 p-5">

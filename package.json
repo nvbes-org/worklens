@@ -1,0 +1,22 @@
+{
+  "name": "worklens-workspace",
+  "private": true,
+  "version": "0.1.0-alpha.1",
+  "packageManager": "pnpm@10.17.1",
+  "scripts": {
+    "dev": "nx run desktop:dev",
+    "check": "nx run-many -t check",
+    "test": "nx run-many -t test",
+    "lint": "nx run-many -t lint",
+    "build": "nx run desktop:bundle",
+    "contracts": "nx run engine:contracts"
+  },
+  "devDependencies": {
+    "nx": "23.2.1",
+    "@nx/react": "23.2.1",
+    "@nx/vite": "23.2.1",
+    "@biomejs/biome": "^2.4.0",
+    "@tauri-apps/cli": "2.11.4",
+    "typescript": "~5.9.3"
+  }
+}

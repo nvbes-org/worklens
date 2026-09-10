@@ -1,0 +1,37 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install chromium
+      - run: pnpm nx run-many -t check lint test --parallel=1
+      - run: pnpm nx run engine:build
+      - name: Build local macOS app
+        run: pnpm exec tauri build --bundles app
+        working-directory: apps/desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: worklens-macos-local-alpha
+          path: |
+            target/release/bundle/macos/Worklens.app
+            target/release/worklens

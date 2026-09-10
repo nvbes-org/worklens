@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Local window: folder selection and explicit HTTPS link opening only.",
+  "windows": ["main"],
+  "permissions": ["core:default", "dialog:allow-open", { "identifier": "opener:allow-open-url", "allow": [{ "url": "https://github.com/**" }] }]
+}

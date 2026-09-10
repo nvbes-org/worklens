@@ -1,0 +1,20 @@
+[package]
+name = "worklens-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+worklens-core = { path = "../../../crates/core" }
+worklens-runtime = { path = "../../../crates/runtime" }
+serde_json.workspace = true
+tokio.workspace = true

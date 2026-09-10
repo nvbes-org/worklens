@@ -1,0 +1,23 @@
+[package]
+name = "worklens-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+worklens-core = { path = "../core" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+rusqlite = { version = "0.38", features = ["bundled"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+keyring = { version = "3.6.3", features = ["apple-native"] }
+directories = "6"
+fs2 = "0.4"
+
+[dev-dependencies]
+tempfile.workspace = true
+wiremock = "0.6"

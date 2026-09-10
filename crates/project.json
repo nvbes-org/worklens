@@ -1,0 +1,11 @@
+{
+  "name": "engine",
+  "projectType": "library",
+  "targets": {
+    "check": { "inputs": ["engineSources"], "command": "cargo check --workspace && cargo run -p worklens-core --bin export-contracts -- --check" },
+    "test": { "inputs": ["engineSources"], "command": "cargo test --workspace && cargo build -p worklens && node --test tests/service.test.mjs" },
+    "lint": { "inputs": ["engineSources"], "command": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings" },
+    "contracts": { "command": "cargo run -p worklens-core --bin export-contracts", "cache": false },
+    "build": { "inputs": ["engineSources"], "command": "cargo build -p worklens --release", "outputs": ["{workspaceRoot}/target/release/worklens"] }
+  }
+}

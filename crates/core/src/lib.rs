@@ -1,0 +1,18 @@
+pub mod agents;
+pub mod graph;
+pub mod model;
+pub mod protocol;
+
+pub use agents::*;
+pub use graph::*;
+pub use model::*;
+pub use protocol::*;
+
+pub fn now() -> String {
+    chrono::Utc::now().to_rfc3339()
+}
+
+pub fn stable_id(namespace: &str, value: &str) -> String {
+    use sha2::{Digest, Sha256};
+    format!("{namespace}:{:x}", Sha256::digest(value.as_bytes()))
+}

@@ -17,6 +17,7 @@ pub enum Operation {
     Tasks,
     Impact,
     PrImpact,
+    Validations,
     Documents,
     Document,
     Context,
@@ -45,6 +46,7 @@ pub enum Operation {
     WorkLink,
     WorkUnlink,
     WorkNote,
+    WorkExpectations,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

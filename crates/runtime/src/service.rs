@@ -172,6 +172,7 @@ impl Service {
                 Ok(serde_json::to_value(worklens_core::impact(&graph, &paths))?)
             }
             Operation::PrImpact => crate::service_impact::collect(self, &repo, p).await,
+            Operation::Validations => crate::service_validations::collect(self, &repo, p).await,
             Operation::Documents => Ok(serde_json::to_value(crate::documents::list(root).await?)?),
             Operation::Document => Ok(
                 json!({ "path": text(p, "path")?, "text": crate::documents::read(root, text(p, "path")?).await?, "provenance": Provenance::observed("repository documentation") }),
@@ -187,7 +188,8 @@ impl Service {
             | Operation::WorkUpdate
             | Operation::WorkLink
             | Operation::WorkUnlink
-            | Operation::WorkNote => {
+            | Operation::WorkNote
+            | Operation::WorkExpectations => {
                 crate::service_work::dispatch(self, &repo, &request.operation, p).await
             }
             Operation::AgentStart

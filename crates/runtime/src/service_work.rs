@@ -128,6 +128,7 @@ pub async fn dispatch(
         Operation::WorkLink => "link",
         Operation::WorkUnlink => "unlink",
         Operation::WorkNote => "note",
+        Operation::WorkExpectations => "expectations",
         _ => return Err(error("Invalid work operation")),
     };
     if p["change"]["action"] != expected {
@@ -137,6 +138,23 @@ pub async fn dispatch(
         return Ok(serde_json::to_value(replay)?);
     }
     match &mutation.change {
+        WorkChange::Expectations { expectations } => {
+            if expectations.len() > 100 {
+                return Err(error("At most 100 validation expectations"));
+            }
+            for (i, e) in expectations.iter().enumerate() {
+                bounded(&e.name, 200, true)?;
+                if !crate::github::valid_slug(&e.repository)
+                    || e.repository.len() > 200
+                    || e.app_id == Some(0)
+                    || e.app_id.is_some_and(|id| id > 9_007_199_254_740_991)
+                    || (e.kind == ValidationKind::Status && e.app_id.is_some())
+                    || expectations[..i].contains(e)
+                {
+                    return Err(error("Invalid or duplicate validation expectation"));
+                }
+            }
+        }
         WorkChange::Create {
             title,
             objective,

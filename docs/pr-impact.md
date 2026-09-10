@@ -55,5 +55,5 @@ installation, fetch, checkout, lockfile write or GitHub mutation.
 `collection.provenance.status == "available"` describes file collection only.
 It never means the dependency graph or validations are complete.
 
-Expected validations, structured human-agent decisions and work-specific context
-export remain separate functional increments.
+The [validation center](validations.md) now compares local expectations with exact-SHA
+checks. Structured human-agent decisions and work-specific context export remain later increments.

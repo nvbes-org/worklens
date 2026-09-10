@@ -21,6 +21,7 @@ Requires macOS Apple Silicon, Rust, Node, pnpm and Xcode Command Line Tools.
 - Git changes, branches, commit graph and worktrees without fetch or mutation.
 - Catalog and source-backed graphs from manifests, installed Cargo data and trusted Nx/pnpm.
 - GitHub App connection, issues, pull requests, exact-SHA checks, workflow jobs and bounded logs.
+- [Validation center](docs/validations.md): declared expectations versus observed checks/statuses, with missing, ambiguous and unavailable results kept explicit.
 - Explicit agent declarations, presence and selected context through desktop, CLI and MCP.
 
 See [installation](docs/install.md), [CLI/MCP](docs/cli.md), [GitHub setup](docs/github.md),

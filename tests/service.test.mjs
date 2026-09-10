@@ -22,12 +22,16 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
   let daemon;
   let mcp;
   const start = async () => {
-    daemon = spawn(binary, ['serve'], { env, stdio: 'ignore' });
+    let diagnostics = '';
+    let lastError;
+    daemon = spawn(binary, ['serve'], { env, stdio: ['ignore','ignore','pipe'] });
+    daemon.stderr.on('data',chunk=>{ diagnostics=(diagnostics+chunk.toString()).slice(-8192); });
     for (let n = 0; n < 100; n++) {
+      if(daemon.exitCode!==null || daemon.signalCode!==null)throw new Error(`Service exited: ${daemon.exitCode ?? daemon.signalCode}; ${diagnostics}`);
       try { await stat(`${data}/service.sock`); await cli('recent'); return; }
-      catch { await delay(25); }
+      catch(error) { lastError=error; await delay(25); }
     }
-    throw new Error('service startup timeout');
+    throw new Error(`service startup timeout; ${diagnostics}`,{cause:lastError});
   };
   const stop = async (child) => {
     if (!child || child.exitCode !== null || child.signalCode !== null) return;
@@ -84,6 +88,15 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     const note = await rpc('tools/call',{name:'worklens_work',arguments:{operation:'work_note',repository:opened.path,params:{...work,eventId:'work-note',expectedRevision:1,change:{action:'note',text:'MCP local note'}}}});
     assert.equal(JSON.parse(note.result.content[0].text).item.revision,2);
     assert.equal((await cli('work','show','--repo',repository,'--params',JSON.stringify({id:work.id}))).events[0].details.text,'MCP local note');
+    const expectations={...work,eventId:'expectations',expectedRevision:2,change:{action:'expectations',expectations:[{repository:'owner/repo',kind:'check',name:'test',appId:42}]}};
+    const expectedResult=await rpc('tools/call',{name:'worklens_work',arguments:{operation:'work_expectations',repository:opened.path,params:expectations}});
+    assert.equal(expectedResult.result.isError,false);
+    const declared=JSON.parse(expectedResult.result.content[0].text).item;
+    assert.deepEqual((await cli('work','show','--repo',repository,'--params',JSON.stringify({id:work.id}))).item,declared);
+    assert.equal((await cli('work','expectations','--repo',repository,'--params',JSON.stringify(expectations))).applied,false);
+    const invalidValidation=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'validations',repository:opened.path,params:{slug:'owner/repo',sha:'bad'}}});
+    assert.equal(invalidValidation.result.isError,true);
+    assert.match(invalidValidation.result.content[0].text,/40-character/);
     const finished = await rpc('tools/call', { name: 'worklens_report', arguments: { action: 'finish', repository: opened.path, id: agent.id, eventId: 'event-2' } });
     assert.equal(JSON.parse(finished.result.content[0].text).session.state, 'completed');
     const mismatch = await new Promise((done, reject) => {
@@ -101,7 +114,8 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     assert.equal((await cli('agents', '--repo', repository))[0].state, 'completed');
     const persisted = await cli('work','show','--repo',repository,'--params',JSON.stringify({id:work.id}));
     assert.equal(persisted.item.state,'todo');
-    assert.equal(persisted.item.revision,2);
+    assert.equal(persisted.item.revision,3);
+    assert.equal(persisted.item.expectations[0].name,'test');
     console.log(`Service evidence retained at ${directory}`);
   } finally {
     await stop(mcp);

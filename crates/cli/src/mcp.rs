@@ -12,7 +12,7 @@ struct WorklensMcp;
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct Query {
-    /// Read tool: status, projects, graph, git, diff, impact, pr_impact, documents, document, context, agents, issues, prs, pr, issue, ci, run, logs, search, recent, doctor, work_list, work_show. Work mutation tool: work_create, work_update, work_link, work_unlink, work_note.
+    /// Read tool: status, projects, graph, git, diff, impact, pr_impact, validations, documents, document, context, agents, issues, prs, pr, issue, ci, run, logs, search, recent, doctor, work_list, work_show. Work mutation tool: work_create, work_update, work_link, work_unlink, work_note, work_expectations.
     operation: String,
     /// Canonical path of a repository previously opened by the user in Worklens.
     repository: Option<String>,
@@ -51,6 +51,7 @@ impl WorklensMcp {
             "diff",
             "impact",
             "pr_impact",
+            "validations",
             "documents",
             "document",
             "context",
@@ -112,6 +113,7 @@ impl WorklensMcp {
             "work_link",
             "work_unlink",
             "work_note",
+            "work_expectations",
         ]
         .contains(&query.operation.as_str())
         {

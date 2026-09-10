@@ -12,7 +12,7 @@ impl Store {
     pub fn open(path: &Path) -> Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-        if version > 2 {
+        if version > 3 {
             return Err(error("Database is newer than this Worklens build"));
         }
         connection.busy_timeout(std::time::Duration::from_secs(5))?;
@@ -26,7 +26,7 @@ impl Store {
         connection.execute_batch("BEGIN IMMEDIATE;
             CREATE TABLE IF NOT EXISTS work_items (repository_id TEXT NOT NULL, id TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(repository_id,id));
             CREATE TABLE IF NOT EXISTS work_events (repository_id TEXT NOT NULL, event_id TEXT NOT NULL, work_id TEXT NOT NULL, revision INTEGER NOT NULL, payload TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(repository_id,event_id), UNIQUE(repository_id,work_id,revision));
-            PRAGMA user_version=2;
+            PRAGMA user_version=3;
             COMMIT;")?;
         Ok(Self { connection })
     }

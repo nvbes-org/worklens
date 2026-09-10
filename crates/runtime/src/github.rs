@@ -18,6 +18,9 @@ mod impact_tests;
 #[cfg(test)]
 #[path = "github.tests.rs"]
 mod tests;
+#[cfg(test)]
+#[path = "github_validations.tests.rs"]
+mod validation_tests;
 pub struct Github {
     api_base: String,
     #[cfg(test)]

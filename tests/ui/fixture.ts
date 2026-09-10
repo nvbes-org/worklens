@@ -20,14 +20,15 @@ export async function seed(page: Page) {
       switch(request.operation){
         case 'work_list':data={items:[...workItems.values()].filter(w=>(!request.params.reference||w.links.some(l=>l.reference===request.params.reference))&&(!request.params.state||w.state===request.params.state)),nextOffset:null};break;
         case 'work_show':data={item:workItems.get(String(request.params.id)),events:workEvents.get(String(request.params.id))??[],nextOffset:null};break;
-        case 'work_create':case 'work_update':case 'work_link':case 'work_unlink':case 'work_note':{
+        case 'work_create':case 'work_update':case 'work_link':case 'work_unlink':case 'work_note':case 'work_expectations':{
           const p=request.params as unknown as WorkMutation;
           const c=p.change;
           let item=workItems.get(p.id);
           if(item&&item.revision!==p.expectedRevision)return {version:1,data:null,error:'Revision conflict: reload the work item'};
-          if(c.action==='create')item={id:p.id,repositoryId:repo.id,title:c.title,objective:c.objective,criteria:c.criteria,state:'todo',revision:0,links:c.links,createdAt:source.collectedAt,updatedAt:source.collectedAt};
+          if(c.action==='create')item={id:p.id,repositoryId:repo.id,title:c.title,objective:c.objective,criteria:c.criteria,state:'todo',revision:0,links:c.links,expectations:[],createdAt:source.collectedAt,updatedAt:source.collectedAt};
           if(!item)return {version:1,data:null,error:'Work item not found'};
           if(c.action==='update')Object.assign(item,{title:c.title,objective:c.objective,criteria:c.criteria,state:c.state});
+          if(c.action==='expectations')item.expectations=c.expectations;
           if(c.action==='link')item.links=[...item.links.filter(l=>l.kind!==c.link.kind||l.reference!==c.link.reference),c.link];
           if(c.action==='unlink')item.links=item.links.filter(l=>l.kind!==c.kind||l.reference!==c.reference);
           item={...item,revision:item.revision+1};workItems.set(item.id,item);
@@ -47,6 +48,12 @@ export async function seed(page: Page) {
         case 'pr':data=envelope({pr,files:section([{filename:'libs/core/src/lib.rs',patch:'-before\n+after'}]),reviews:section([]),comments:section([]),checks:section({check_runs:[{id:1,name:'Rust tests',conclusion:'success'}]}),statuses:section({statuses:[]}),runs:section({workflow_runs:[]})});break;
         case 'pr_impact':data={collection:{revision:{baseRepository:'example/fixture',headRepository:'example/fixture',baseSha:'def456',headSha:'abc123',expectedFiles:101},files:Array.from({length:101},(_,i)=>({path:i===100?'apps/web/page-two.ts':`libs/core/${i}.rs`,previousPath:null,status:'modified'})),pagesCollected:2,revisionVerified:true,provenance:source,warnings:[]},graphSources:[source],graphWorktree:repo.path,graphHead:'abc123',graphMatchesHead:false,impact:{direct:[{project:graph.nodes[1],paths:['libs/core/0.rs']},{project:graph.nodes[0],paths:['apps/web/page-two.ts']}],dependants:[],unmatched:[],transversal:[]},warnings:['Local graph is dirty; impact is approximate.']};break;
         case 'impact':data={direct:['cargo:core'],dependants:['nx:web'],warning:'Impact estimate, not validation proof.'};break;
+        case 'validations':{
+          const item=workItems.get(String(request.params.workId));
+          const expectations=(item?.expectations??[]).filter(e=>e.repository==='example/fixture');
+          const assessments=expectations.map(expectation=>({expectation,outcome:expectation.name==='Rust tests'?'success':'missing',matches:expectation.name==='Rust tests'?['check:1']:[]}));
+          data={repository:'example/fixture',sha:'abc123',workRevision:item?.revision??null,summary:assessments.length?(assessments.every(a=>a.outcome==='success')?'satisfied':'attention'):'not_configured',assessments,observations:[{id:'check:1',kind:'check',name:'Rust tests',appId:42,sha:'abc123',outcome:'success',rawState:'success',url:null}],sources:[source],warnings:['Local expectations are not GitHub branch protection or merge eligibility.']};break;
+        }
         case 'documents':data=[{path:'README.md',title:'README.md'}];break;
         case 'document':data={path:'README.md',text:'# Fixture\n\nLocal project.\n<script>window.pwned=true</script>',provenance:source};break;
         case 'context':data={markdown:'### git\n\nSource: fixture',items:[],nextOffset:null};break;

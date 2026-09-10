@@ -50,6 +50,8 @@ pub struct WorkItem {
     pub state: WorkState,
     pub revision: u32,
     pub links: Vec<WorkLink>,
+    #[serde(default)]
+    pub expectations: Vec<crate::ValidationExpectation>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -90,6 +92,9 @@ pub struct WorkResult {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "action", rename_all = "snake_case")]
 pub enum WorkChange {
+    Expectations {
+        expectations: Vec<crate::ValidationExpectation>,
+    },
     Create {
         title: String,
         objective: String,

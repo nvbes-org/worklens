@@ -25,14 +25,20 @@ export type ImpactMatch = { project: Project, paths: Array<string>, };
 export type ImpactDependent = { project: Project, via: Edge, };
 export type DetailedImpact = { direct: Array<ImpactMatch>, dependants: Array<ImpactDependent>, unmatched: Array<string>, transversal: Array<string>, };
 export type PrImpact = { collection: PrFileCollection, graphSources: Array<Provenance>, graphWorktree: string, graphHead: string | null, graphMatchesHead: boolean, impact: DetailedImpact, warnings: Array<string>, };
+export type ValidationKind = "check" | "status";
+export type ValidationOutcome = "success" | "failure" | "pending" | "cancelled" | "skipped" | "neutral" | "timed_out" | "action_required" | "unknown" | "missing" | "ambiguous";
+export type ValidationExpectation = { repository: string, kind: ValidationKind, name: string, appId: number | null, };
+export type ValidationObservation = { id: string, kind: ValidationKind, name: string, appId: number | null, sha: string, outcome: ValidationOutcome, rawState: string, url: string | null, };
+export type ValidationAssessment = { expectation: ValidationExpectation, outcome: ValidationOutcome, matches: Array<string>, };
+export type ValidationReport = { repository: string, sha: string, workRevision: number | null, observations: Array<ValidationObservation>, assessments: Array<ValidationAssessment>, sources: Array<Provenance>, summary: string, warnings: Array<string>, };
 export type AgentState = "active" | "waiting" | "blocked" | "completed" | "failed";
 export type AgentSession = { id: string, repositoryId: string, worktree: string, tool: string, objective: string, state: AgentState, message: string, lastSeen: string, presence: string, issue: string | null, pr: string | null, };
-export type Operation = "open" | "recent" | "trust" | "status" | "git" | "diff" | "projects" | "graph" | "tasks" | "impact" | "pr_impact" | "documents" | "document" | "context" | "doctor" | "agents" | "agent_start" | "agent_update" | "agent_heartbeat" | "agent_finish" | "github_auth_start" | "github_auth_poll" | "github_auth_status" | "github_logout" | "issues" | "prs" | "pr" | "issue" | "ci" | "run" | "logs" | "search" | "work_list" | "work_show" | "work_create" | "work_update" | "work_link" | "work_unlink" | "work_note";
+export type Operation = "open" | "recent" | "trust" | "status" | "git" | "diff" | "projects" | "graph" | "tasks" | "impact" | "pr_impact" | "validations" | "documents" | "document" | "context" | "doctor" | "agents" | "agent_start" | "agent_update" | "agent_heartbeat" | "agent_finish" | "github_auth_start" | "github_auth_poll" | "github_auth_status" | "github_logout" | "issues" | "prs" | "pr" | "issue" | "ci" | "run" | "logs" | "search" | "work_list" | "work_show" | "work_create" | "work_update" | "work_link" | "work_unlink" | "work_note" | "work_expectations";
 export type WorkState = "todo" | "in_progress" | "waiting" | "blocked" | "completed" | "abandoned";
 export type WorkLinkKind = "pr" | "issue" | "worktree" | "agent" | "component";
 export type WorkLinkStatus = "candidate" | "confirmed" | "rejected";
 export type WorkLink = { kind: WorkLinkKind, reference: string, status: WorkLinkStatus, reason: string, };
-export type WorkItem = { id: string, repositoryId: string, title: string, objective: string, criteria: string, state: WorkState, revision: number, links: Array<WorkLink>, createdAt: string, updatedAt: string, };
+export type WorkItem = { id: string, repositoryId: string, title: string, objective: string, criteria: string, state: WorkState, revision: number, links: Array<WorkLink>, expectations: Array<ValidationExpectation>, createdAt: string, updatedAt: string, };
 export type WorkEvent = { eventId: string, revision: number, action: string,
 /**
  * Attribution is explicitly supplied by the caller, not an authenticated identity.
@@ -41,7 +47,7 @@ actor: string, createdAt: string, details: JsonValue, };
 export type WorkDetail = { item: WorkItem, events: Array<WorkEvent>, nextOffset: number | null, };
 export type WorkList = { items: Array<WorkItem>, nextOffset: number | null, };
 export type WorkResult = { applied: boolean, item: WorkItem, };
-export type WorkChange = { "action": "create", title: string, objective: string, criteria: string, links: Array<WorkLink>, } | { "action": "update", title: string, objective: string, criteria: string, state: WorkState, } | { "action": "link", link: WorkLink, } | { "action": "unlink", kind: WorkLinkKind, reference: string, } | { "action": "note", text: string, };
+export type WorkChange = { "action": "expectations", expectations: Array<ValidationExpectation>, } | { "action": "create", title: string, objective: string, criteria: string, links: Array<WorkLink>, } | { "action": "update", title: string, objective: string, criteria: string, state: WorkState, } | { "action": "link", link: WorkLink, } | { "action": "unlink", kind: WorkLinkKind, reference: string, } | { "action": "note", text: string, };
 export type WorkMutation = { id: string, eventId: string, actor: string,
 /**
  * Zero for creation; otherwise the last revision read by the caller.

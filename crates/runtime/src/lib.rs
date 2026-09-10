@@ -34,3 +34,5 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub fn error(message: impl Into<String>) -> Error {
     Error::Message(message.into())
 }
+mod github_validations;
+mod service_validations;

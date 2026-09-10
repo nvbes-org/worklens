@@ -4,6 +4,7 @@ import { ErrorNotice } from '../components/common';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useWorkChange, workStates } from '../lib/work';
+import { WorkExpectations } from './work-expectations';
 import { WorkLinks } from './work-links';
 
 export function WorkDetailView({ detail }: { detail: WorkDetail }) {
@@ -12,6 +13,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [expectationDirty, setExpectationDirty] = useState(false);
   async function apply(value: WorkChange) {
     setBusy(true);
     setError('');
@@ -45,47 +47,60 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
           });
         }}
       >
-        <label className="block text-sm" htmlFor="work-title">
-          Work title
-          <Input id="work-title" name="title" defaultValue={item.title} required maxLength={200} />
-        </label>
-        <label className="block text-sm" htmlFor="work-objective">
-          Objective
-          <Input
-            id="work-objective"
-            name="objective"
-            defaultValue={item.objective}
-            required
-            maxLength={8192}
-          />
-        </label>
-        <label className="block text-sm" htmlFor="work-criteria">
-          Result criteria
-          <Input id="work-criteria" name="criteria" defaultValue={item.criteria} maxLength={16384} />
-        </label>
-        <label className="block text-sm">
-          Declared work state{' '}
-          <select
-            name="state"
-            aria-label="Declared work state"
-            className="rounded border bg-white p-2"
-            defaultValue={item.state}
-          >
-            {workStates.map((state) => (
-              <option key={state} value={state}>
-                {state}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Button disabled={busy}>Save changes</Button>
+        <fieldset disabled={expectationDirty} className="space-y-3">
+          <label className="block text-sm" htmlFor="work-title">
+            Work title
+            <Input id="work-title" name="title" defaultValue={item.title} required maxLength={200} />
+          </label>
+          <label className="block text-sm" htmlFor="work-objective">
+            Objective
+            <Input
+              id="work-objective"
+              name="objective"
+              defaultValue={item.objective}
+              required
+              maxLength={8192}
+            />
+          </label>
+          <label className="block text-sm" htmlFor="work-criteria">
+            Result criteria
+            <Input id="work-criteria" name="criteria" defaultValue={item.criteria} maxLength={16384} />
+          </label>
+          <label className="block text-sm">
+            Declared work state{' '}
+            <select
+              name="state"
+              aria-label="Declared work state"
+              className="rounded border bg-white p-2"
+              defaultValue={item.state}
+            >
+              {workStates.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button disabled={busy || expectationDirty}>Save changes</Button>
+        </fieldset>
       </form>
       {dirty && (
         <p className="text-sm text-muted-foreground">
           Save your field changes before editing links or adding a note. Reload discards unsaved fields.
         </p>
       )}
-      <WorkLinks item={item} apply={apply} busy={busy || dirty} />
+      {expectationDirty && (
+        <p className="text-sm text-muted-foreground">
+          Save the expectation draft before other changes. Reload discards the draft.
+        </p>
+      )}
+      <WorkExpectations
+        item={item}
+        apply={apply}
+        busy={busy || dirty}
+        onDirty={() => setExpectationDirty(true)}
+      />
+      <WorkLinks item={item} apply={apply} busy={busy || dirty || expectationDirty} />
       <section className="border-t pt-5">
         <h3 className="mb-3 font-medium">Local notes</h3>
         <form
@@ -103,7 +118,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
             maxLength={8192}
             placeholder="Not posted to GitHub"
           />
-          <Button disabled={busy || dirty}>Add note</Button>
+          <Button disabled={busy || dirty || expectationDirty}>Add note</Button>
         </form>
       </section>
       <section className="border-t pt-5">

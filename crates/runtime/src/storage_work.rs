@@ -123,6 +123,7 @@ impl Store {
                 state: WorkState::Todo,
                 revision: 0,
                 links: links.clone(),
+                expectations: vec![],
                 created_at: now.clone(),
                 updated_at: now.clone(),
             }
@@ -136,6 +137,9 @@ impl Store {
                 ));
             }
             match &mutation.change {
+                WorkChange::Expectations { expectations } => {
+                    item.expectations = expectations.clone()
+                }
                 WorkChange::Update {
                     title,
                     objective,

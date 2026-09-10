@@ -5,6 +5,7 @@ import { ErrorNotice, ExternalLink, Loading, Source } from '../components/common
 import { PrImpactView } from '../components/pr-impact';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Validations } from '../components/validations';
 import { WorkEntry } from '../components/work-entry';
 import { list, num, openUrl, record, str } from '../lib/api';
 import { useAgents, useData, useGit } from '../lib/session';
@@ -131,6 +132,7 @@ export function GithubDetail({ kind, number }: { kind: 'pr' | 'issue' | 'run'; n
             </section>
           )}
           {kind === 'pr' && <PrImpactView number={number} headSha={str(head.sha)} />}
+          {kind === 'pr' && <Validations number={number} sha={str(head.sha)} />}
           {[
             'files',
             'checks',

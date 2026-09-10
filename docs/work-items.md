@@ -41,4 +41,4 @@ Database schema 2 adds work items and append-only work events without changing e
 
 ## Delivery boundary
 
-This increment supplies the work-item lifecycle, explicit associations, notes, history and source-entry navigation. Linked PRs now expose [full PR impact](pr-impact.md) on demand. Aggregating all remote details, automatic link suggestions, validation expectations, structured decisions and work-specific context remain later functional increments. Existing PR/worktree heuristics are not treated as confirmed work-item links.
+This increment supplies the work-item lifecycle, explicit associations, notes, history and source-entry navigation. Linked PRs expose [full PR impact](pr-impact.md) and the [validation center](validations.md) on demand. Local validation expectations are revision-protected work-item data. Aggregating all remote details, automatic link suggestions, structured decisions and work-specific context remain later functional increments. Existing PR/worktree heuristics are not treated as confirmed work-item links.

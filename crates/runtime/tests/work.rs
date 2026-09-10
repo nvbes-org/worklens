@@ -40,6 +40,98 @@ fn create() -> Value {
 }
 
 #[tokio::test]
+async fn expectations_are_revision_protected_and_survive_legacy_upgrade() {
+    let root = repo();
+    let data = tempfile::tempdir().unwrap();
+    let path = data.path().join("db");
+    let service = Service::new(&path).unwrap();
+    call(&service, root.path(), Operation::Open, json!({})).await;
+    call(
+        &service,
+        root.path(),
+        Operation::WorkCreate,
+        mutation("w", "create", 0, create()),
+    )
+    .await;
+    drop(service);
+    let connection = rusqlite::Connection::open(&path).unwrap();
+    connection.execute_batch("UPDATE work_items SET value=json_remove(value,'$.expectations'); PRAGMA user_version=2;").unwrap();
+    drop(connection);
+    let service = Service::new(&path).unwrap();
+    let old = call(
+        &service,
+        root.path(),
+        Operation::WorkShow,
+        json!({"id":"w"}),
+    )
+    .await;
+    assert_eq!(old.data["item"]["expectations"], json!([]));
+    let expected = json!({"repository":"owner/repo","kind":"check","name":"test","appId":42});
+    let payload = mutation(
+        "w",
+        "expect",
+        1,
+        json!({"action":"expectations","expectations":[expected]}),
+    );
+    let result = call(
+        &service,
+        root.path(),
+        Operation::WorkExpectations,
+        payload.clone(),
+    )
+    .await;
+    assert!(result.error.is_none(), "{:?}", result.error);
+    assert_eq!(result.data["item"]["state"], "todo");
+    assert_eq!(result.data["item"]["revision"], 2);
+    assert_eq!(
+        call(&service, root.path(), Operation::WorkExpectations, payload)
+            .await
+            .data["applied"],
+        false
+    );
+    let conflict = mutation(
+        "w",
+        "conflict",
+        1,
+        json!({"action":"expectations","expectations":[]}),
+    );
+    assert!(
+        call(&service, root.path(), Operation::WorkExpectations, conflict)
+            .await
+            .error
+            .is_some()
+    );
+    let duplicate = mutation(
+        "w",
+        "duplicate",
+        2,
+        json!({"action":"expectations","expectations":[expected,expected]}),
+    );
+    assert!(
+        call(
+            &service,
+            root.path(),
+            Operation::WorkExpectations,
+            duplicate
+        )
+        .await
+        .error
+        .is_some()
+    );
+    drop(service);
+    let service = Service::new(&path).unwrap();
+    let result = call(
+        &service,
+        root.path(),
+        Operation::WorkShow,
+        json!({"id":"w"}),
+    )
+    .await;
+    assert_eq!(result.data["item"]["expectations"], json!([expected]));
+    assert_eq!(result.data["events"][0]["action"], "expectations");
+}
+
+#[tokio::test]
 async fn work_transactions_retries_conflicts_and_restart() {
     let root = repo();
     let data = tempfile::tempdir().unwrap();
@@ -226,9 +318,9 @@ fn migration_preserves_existing_settings_and_refuses_future_versions() {
         connection
             .query_row("PRAGMA user_version", [], |r| r.get::<_, u32>(0))
             .unwrap(),
-        2
+        3
     );
-    connection.execute_batch("PRAGMA user_version=3").unwrap();
+    connection.execute_batch("PRAGMA user_version=4").unwrap();
     assert!(Store::open(&path).is_err());
 }
 

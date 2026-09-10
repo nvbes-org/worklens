@@ -36,6 +36,7 @@ worklens prs --repo /absolute/path/to/repository --params '{"state":"open","page
 worklens issues --repo /absolute/path/to/repository --params '{"page":2}'
 worklens pr --repo /absolute/path/to/repository --params '{"number":12,"page":1}'
 worklens pr-impact --repo /absolute/path/to/repository --params '{"number":12}'
+worklens validations --repo /absolute/path/to/repository --params '{"number":12,"workId":"work-1"}'
 worklens issue --repo /absolute/path/to/repository --params '{"number":14}'
 worklens ci --repo /absolute/path/to/repository
 worklens run --repo /absolute/path/to/repository --params '{"number":123456}'
@@ -59,6 +60,8 @@ States: active, waiting, blocked; finish sets completed or failed (`failed:true`
 ## Local work items
 
 `worklens work list|show|create|update|link|unlink|note` manages local objectives. MCP exposes read operations through `worklens_query` and mutations through `worklens_work`. See [work-item contracts and examples](work-items.md) for revisions, event IDs, source links and pagination.
+
+`worklens work expectations` declares local validation criteria. `validations` compares them with checks/statuses for an exact commit; see [validation center](validations.md) for matching, revision protection and limits.
 
 ## Selected context
 

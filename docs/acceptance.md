@@ -52,7 +52,7 @@ The work-item lifecycle is implemented across desktop, CLI and MCP: create from 
 
 Validation for this increment: all six Nx check/lint/test targets passed without cache; 18 Rust tests, 12 Playwright scenarios and the real CLI/socket/MCP integration test passed. The native app created a real local Worklens delivery item; CLI reads returned that item, CLI added its PR/worktree/agent links, and native Reload displayed revision 4 with all three links and their history. The app and DMG were built and strict ad-hoc code-signature verification passed. No native performance claim is made.
 
-See [work-item semantics](work-items.md). Expected validations, structured decisions and work-context export remain pending.
+See [work-item semantics](work-items.md). Structured decisions and work-context export remain pending; locally declared validation expectations are implemented below.
 
 ### Functional increment: full PR impact
 
@@ -62,7 +62,15 @@ The six Nx check/lint/test targets passed locally for this increment, including 
 
 Live recipe at 2026-09-10 15:54 UTC: Worklens PR #1 returned 120/120 files on two pages, with both revision checks matching and six direct local components. The rebuilt native app displayed the same counts and expanded the core component to its matching paths. nvbes PR #217 returned 143/143 files on two pages, 11 direct components and 22 transitive dependants through the CLI. Both results explicitly reported local graph mismatch/partial connectors; execution trust was not granted. These counts describe those snapshots, not later PR revisions. The app/DMG build and strict ad-hoc code-signature verification passed.
 
-### Initial alpha gates still tracked
+### Functional increment: validation center
+
+Local work-item expectations are compared with GitHub checks and commit statuses for an exact SHA. The desktop exposes the report from PR details and linked work items; CLI/MCP share the operation and revision-protected expectation mutations. Non-success, absent, ambiguous and unknown results remain distinct. Schema 3 preserves older work items and prevents older builds from dropping the new fields. See [validation semantics](validations.md).
+
+All six local Nx check/lint/test targets passed (the final run reused three unchanged frontend target outputs): 34 Rust tests, 17 Playwright scenarios, and the real CLI/socket/MCP integration test. One earlier integration run hit its service-startup timeout; the unchanged retry passed. Startup errors now retain bounded diagnostics, and another integration run passed. No timeout was increased.
+
+The macOS app and DMG were built and strict ad-hoc signature verification passed. Native validation collection remains **unverified**: after restarting the rebuilt app, the service was observed blocked inside macOS Keychain access (`SecKeychainFindGenericPassword`) and a SecurityAgent process was present. The user must handle the system authorization prompt; automated tests are not a substitute for this live gate. A local integrity-checked SQLite backup was made before upgrading the active database.
+
+### Remaining native acceptance
 
 1. The GitHub App connection is working. Complete the remaining live recipe in [GitHub setup](github.md), including expiration/revocation and a fork PR.
 2. Verify the complete native PR → changed components → exact CI → worktree → declared agent path with that connection. The equivalent mocked React path passes; it is not a substitute for this gate.

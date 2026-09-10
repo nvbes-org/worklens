@@ -20,3 +20,5 @@ pub fn stable_id(namespace: &str, value: &str) -> String {
     use sha2::{Digest, Sha256};
     format!("{namespace}:{:x}", Sha256::digest(value.as_bytes()))
 }
+mod validation;
+pub use validation::*;

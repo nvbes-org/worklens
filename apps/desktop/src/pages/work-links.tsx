@@ -5,6 +5,7 @@ import { ExternalLink } from '../components/common';
 import { LinkedPrImpact } from '../components/pr-impact';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { LinkedValidations } from '../components/validations';
 import { useAgents, useGit, useGraph } from '../lib/session';
 
 export function WorkLinks({
@@ -106,6 +107,9 @@ export function WorkLinks({
                 Unlink
               </Button>
             </div>
+            {link.kind === 'pr' && link.status !== 'rejected' && (
+              <LinkedValidations reference={link.reference} workId={item.id} workRevision={item.revision} />
+            )}
             {link.kind === 'pr' && link.status !== 'rejected' && (
               <LinkedPrImpact reference={link.reference} />
             )}

@@ -25,6 +25,7 @@ export function useWorkChange() {
       link: 'work_link',
       unlink: 'work_unlink',
       note: 'work_note',
+      expectations: 'work_expectations',
     } as const;
     const signature = JSON.stringify([repo.id, item, change]);
     if (pending.current?.signature !== signature)

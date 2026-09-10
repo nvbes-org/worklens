@@ -180,6 +180,6 @@ impl Github {
         Ok(result)
     }
 }
-fn revision_from_final(pr: &Value, repo: &str, expected: &PrRevision) -> Result<bool> {
+pub(crate) fn revision_from_final(pr: &Value, repo: &str, expected: &PrRevision) -> Result<bool> {
     Ok(&revision(pr, repo)? == expected)
 }

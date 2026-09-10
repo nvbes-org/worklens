@@ -24,6 +24,7 @@ Requires macOS Apple Silicon, Rust, Node, pnpm and Xcode Command Line Tools.
 - [Validation center](docs/validations.md): declared expectations versus observed checks/statuses, with missing, ambiguous and unavailable results kept explicit.
 - [Human–agent decisions](docs/decisions.md): scoped requests, explicit answers/cancellations and history across desktop, CLI and MCP; no automatic execution or authenticated approval claim.
 - [Selected work context](docs/work-context.md): explicit local-source selection, revision-bound snapshots and bounded Markdown/JSON pages shared by desktop, CLI and MCP.
+- [PR evidence dossiers](docs/work-evidence.md): opt-in changed paths, approximate cached-graph impact and exact-SHA validations for a confirmed work-item PR, with revision checks and explicit source limits.
 - Explicit agent declarations, presence and selected context through desktop, CLI and MCP.
 
 See [installation](docs/install.md), [CLI/MCP](docs/cli.md), [GitHub setup](docs/github.md),

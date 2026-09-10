@@ -12,6 +12,7 @@ import { Button } from '../components/ui/button';
 import { query } from '../lib/api';
 import { useSession } from '../lib/session';
 import { WorkContextNotes } from './work-context-notes';
+import { WorkEvidenceSummary } from './work-evidence-summary';
 
 const sections: [WorkContextSection, string][] = [
   ['summary', 'Saved objective, criteria and state'],
@@ -26,6 +27,7 @@ const empty: WorkContextSelection = {
   worktreePaths: [],
   documentPaths: [],
   noteIds: [],
+  prUrls: [],
 };
 
 export function WorkContext({ item, disabled }: { item: WorkItem; disabled: boolean }) {
@@ -51,7 +53,7 @@ export function WorkContext({ item, disabled }: { item: WorkItem; disabled: bool
     setCopied(false);
   }
   function toggle(
-    group: 'projectIds' | 'agentIds' | 'worktreePaths' | 'documentPaths' | 'noteIds',
+    group: 'projectIds' | 'agentIds' | 'worktreePaths' | 'documentPaths' | 'noteIds' | 'prUrls',
     id: string,
   ) {
     select({
@@ -100,8 +102,8 @@ export function WorkContext({ item, disabled }: { item: WorkItem; disabled: bool
     <section className="space-y-3 border-t pt-5" aria-label="Work context export">
       <h3 className="font-medium">Selected work context</h3>
       <p className="text-sm text-muted-foreground">
-        Export only saved information you select. No GitHub discussions, CI logs or conversations. Review the
-        preview for sensitive text before sharing it.
+        Export only the sources you select. Local fields use the saved work revision. No GitHub discussions,
+        CI logs or conversations. Review the preview for sensitive text before sharing it.
       </p>
       <Button variant="outline" onClick={() => setOpened(!opened)}>
         {opened ? 'Hide context selection' : 'Choose context'}
@@ -153,6 +155,24 @@ export function WorkContext({ item, disabled }: { item: WorkItem; disabled: bool
                 );
               })}
             <p className="pt-2 text-xs text-muted-foreground">
+              Optional PR evidence dossier: selecting one confirmed PR authorizes GitHub reads using your
+              connection. Includes changed paths, cached-graph impact and exact-SHA validations; no logs or
+              discussions. Choose at most one PR per snapshot.
+            </p>
+            {item.links
+              .filter((link) => link.kind === 'pr' && link.status === 'confirmed')
+              .map((link) => (
+                <label key={`evidence:${link.reference}`} className="flex gap-2 break-all text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selection.prUrls.includes(link.reference)}
+                    disabled={selection.prUrls.length > 0 && !selection.prUrls.includes(link.reference)}
+                    onChange={() => toggle('prUrls', link.reference)}
+                  />
+                  PR evidence: {link.reference}
+                </label>
+              ))}
+            <p className="pt-2 text-xs text-muted-foreground">
               Documents from the selected repository/worktree (not automatically related to this task).
             </p>
             {documents.isPending && <p className="text-sm">Loading document index…</p>}
@@ -193,6 +213,7 @@ export function WorkContext({ item, disabled }: { item: WorkItem; disabled: bool
                   : ' · Final page.'}
               </p>
               <p className="text-xs text-muted-foreground">{page.warning}</p>
+              <WorkEvidenceSummary items={page.items} />
               <div className="flex gap-2">
                 <label className="text-sm">
                   Export format{' '}

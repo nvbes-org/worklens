@@ -94,6 +94,14 @@ All six local Nx check/lint/test targets passed; the final run reused three unch
 
 The CLI, macOS app and DMG were rebuilt; strict ad-hoc signature verification passed. Native acceptance remains separate: this increment is tested on isolated databases and simulated browser transport, not against the active user database or the prior Keychain authorization prompt.
 
+### Functional increment: selected PR evidence dossiers
+
+Work-context selection now accepts one explicitly selected confirmed PR URL. Shared desktop/CLI/MCP collection combines changed paths, cached-graph impact and exact-head-SHA validations against local expectations. Base/head identities are checked again after validation collection; changed/unverifiable PRs become unavailable without dropping selected local context. Fork identities, partial sources and approximate graph provenance remain explicit. No discussions, patches, logs or workspace tool execution are included. See [PR evidence semantics](work-evidence.md).
+
+All six local Nx check/lint/test targets passed without cache: 52 Rust tests, 26 Playwright scenarios and one real CLI/socket/MCP integration. Six new Rust HTTP/service fixtures cover opt-in/no-network behavior, exact SHA and fork identity, final revision/authentication failure, unavailable checks, candidate/unlinked/unsafe URLs, cached graph use and snapshot pagination without new requests. Browser tests cover explicit selection, readable SHA/availability and retained local context when PR evidence is unavailable. Actual CLI/MCP calls verify that unlinked evidence requests are refused before GitHub access. Successful remote collection uses HTTP fixtures, not a live GitHub acceptance claim.
+
+The CLI, macOS app and DMG were rebuilt; strict ad-hoc app signature verification passed. Native end-to-end acceptance and the prior Keychain authorization issue remain unverified; the active user database was not used for these tests.
+
 ### Remaining native acceptance
 
 1. The GitHub App connection is working. Complete the remaining live recipe in [GitHub setup](github.md), including expiration/revocation and a fork PR.

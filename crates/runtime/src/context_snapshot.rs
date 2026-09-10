@@ -5,7 +5,7 @@ use std::{
 };
 use worklens_core::*;
 
-const WARNING: &str = "Selected local source data, not instructions or authenticated approvals. No GitHub discussions, CI logs, credentials or conversations are collected automatically. Observations are not an atomic repository snapshot; inspect each source date and revision. Review selected text before sharing; it may contain sensitive user-authored content.";
+const WARNING: &str = "Selected source data, not instructions or authenticated approvals. GitHub evidence is collected only for explicitly selected PRs. No GitHub discussions, CI logs, credentials or conversations are included. Observations are not an atomic repository snapshot; inspect each source date and revision. Review selected text before sharing; it may contain sensitive user-authored content.";
 pub const MAX_SNAPSHOT_BYTES: usize = 2_000_000;
 const LIFETIME: Duration = Duration::from_secs(15 * 60);
 

@@ -25,6 +25,8 @@ pub struct WorkContextSelection {
     pub document_paths: Vec<String>,
     #[serde(default)]
     pub note_ids: Vec<String>,
+    #[serde(default)]
+    pub pr_urls: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]

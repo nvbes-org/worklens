@@ -19,8 +19,15 @@ fn validate(selection: &WorkContextSelection, work: &WorkItem) -> Result<()> {
         &selection.worktree_paths,
         &selection.document_paths,
         &selection.note_ids,
+        &selection.pr_urls,
     ];
     let count = groups.iter().map(|g| g.len()).sum::<usize>() + selection.sections.len();
+    if selection.pr_urls.len() > 1 {
+        return Err(error("Select at most one PR evidence dossier per snapshot"));
+    }
+    for url in &selection.pr_urls {
+        crate::work_context_evidence::pr_identity(url)?;
+    }
     if count == 0 || count > 100 {
         return Err(error("Select 1–100 context sections or sources explicitly"));
     }
@@ -39,6 +46,7 @@ fn validate(selection: &WorkContextSelection, work: &WorkItem) -> Result<()> {
         (WorkLinkKind::Component, &selection.project_ids),
         (WorkLinkKind::Agent, &selection.agent_ids),
         (WorkLinkKind::Worktree, &selection.worktree_paths),
+        (WorkLinkKind::Pr, &selection.pr_urls),
     ] {
         if ids.iter().any(|id| {
             !work.links.iter().any(|l| {
@@ -134,6 +142,27 @@ pub async fn collect(service: &Service, repo: &Repository, p: &Value) -> Result<
         });
     }
     crate::work_context_sources::collect(service, repo, &p.selection, &mut items).await?;
+    for url in &p.selection.pr_urls {
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(90),
+            crate::work_context_evidence::collect(service, repo, &work, url),
+        )
+        .await
+        .unwrap_or_else(|_| {
+            Err(error(
+                "PR evidence collection deadline reached; refresh the dossier",
+            ))
+        });
+        match result {
+            Ok(records) => items.extend(records),
+            Err(failure) => items.push(WorkContextItem {
+                kind: "pr_evidence".into(),
+                key: url.clone(),
+                data: Value::Null,
+                sources: vec![Provenance::unavailable(url, &failure.to_string())],
+            }),
+        }
+    }
     if service.db()?.work_item(&repo.id, &p.id)?.revision != work.revision {
         return Err(error(
             "Work item changed while collecting context; reload and export again",

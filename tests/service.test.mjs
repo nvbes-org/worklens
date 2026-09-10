@@ -125,6 +125,11 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     assert.equal(noteRecords[2].data.revision,2);
     const noteOnly=await cli('work','context','--repo',repository,'--params',JSON.stringify({id:work.id,expectedRevision:7,selection:{noteIds:['work-note']}}));
     assert.deepEqual(noteOnly.items,[noteRecords[2]]);
+    const unlinkedEvidence={id:work.id,expectedRevision:7,selection:{prUrls:['https://github.com/owner/repo/pull/1']}};
+    await assert.rejects(cli('work','context','--repo',repository,'--params',JSON.stringify(unlinkedEvidence)),error=>error.stderr.includes('confirmed link'));
+    const deniedEvidence=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'work_context',repository:opened.path,params:unlinkedEvidence}});
+    assert.equal(deniedEvidence.result.isError,true);
+    assert.match(deniedEvidence.result.content[0].text,/confirmed link/);
     const invalidValidation=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'validations',repository:opened.path,params:{slug:'owner/repo',sha:'bad'}}});
     assert.equal(invalidValidation.result.isError,true);
     assert.match(invalidValidation.result.content[0].text,/40-character/);

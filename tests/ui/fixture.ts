@@ -32,6 +32,10 @@ export async function seed(page: Page) {
             if(selection.sections.includes('expectations'))item.expectations.forEach((expectation,i)=>items.push({kind:'expectation',key:`expectation:${i}`,data:expectation,sources:[source]}));
             selection.documentPaths.forEach(path=>items.push({kind:'document',key:path,data:{path,text:'# Fixture\n<script>window.pwned=true</script>'},sources:[source]}));
             (selection.noteIds??[]).forEach(id=>{const note=workEvents.get(item.id)?.find(e=>e.eventId===id&&e.action==='note');if(!note)throw new Error('Selected note not found');const details=note.details as {text:string};items.push({kind:'note',key:id,data:{eventId:id,revision:note.revision,actor:note.actor,createdAt:note.createdAt,text:details.text},sources:[{...source,source:'explicit local note (not authenticated)',revision:String(note.revision),collectedAt:note.createdAt}]});});
+            (selection.prUrls??[]).forEach(url=>{
+              items.push({kind:'pr_evidence',key:`${url}:identity`,data:{pr:url,sha:'b'.repeat(40),value:{revisionVerified:true,filesCollected:1,revision:{expectedFiles:1},warnings:[]}},sources:[source]});
+              items.push({kind:'pr_validations',key:`${url}:validations`,data:{pr:url,sha:'b'.repeat(40),value:{summary:'not_configured',warning:'Not merge eligibility'}},sources:[source]});
+            });
             snapshot={snapshotId:crypto.randomUUID(),repositoryId:repo.id,repositoryPath:repo.path,workId:item.id,workRevision:item.revision,collectedAt:source.collectedAt,expiresAt:'2026-09-10T10:15:00Z',offset:0,nextOffset:null,total:items.length,items,warning:'Selected local declarations; no automatic execution.',markdown:''};
             contextSnapshots.set(snapshot.snapshotId,structuredClone(snapshot));
           }else snapshot=contextSnapshots.get(String(request.params.snapshotId));

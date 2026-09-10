@@ -53,6 +53,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         WorkResult::decl(&cfg),
         WorkChange::decl(&cfg),
         WorkMutation::decl(&cfg),
+        WorkContextSection::decl(&cfg),
+        WorkContextSelection::decl(&cfg),
+        WorkContextRequest::decl(&cfg),
+        WorkContextPageRequest::decl(&cfg),
+        WorkContextItem::decl(&cfg),
+        WorkContextPage::decl(&cfg),
         Request::decl(&cfg),
         Response::decl(&cfg),
     ];

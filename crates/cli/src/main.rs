@@ -11,7 +11,7 @@ use worklens_core::{Operation, PROTOCOL_VERSION, Request};
 struct Cli {
     #[arg(value_parser = ["serve", "mcp", "open", "recent", "trust", "status", "projects", "graph", "tasks", "impact", "pr-impact", "validations", "git", "diff", "documents", "document", "issues", "prs", "pr", "issue", "ci", "run", "logs", "context", "doctor", "agents", "agent", "search", "work"])]
     command: String,
-    /// Agent action, work action (including decision-request/decision-answer/decision-cancel), or path for open.
+    /// Agent/work action (including context/context-page and decision-*), or path for open.
     argument: Option<String>,
     #[arg(long)]
     repo: Option<String>,
@@ -52,11 +52,13 @@ async fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         format!("agent_{action}")
     } else if cli.command == "work" {
         let action = cli.argument.as_deref().ok_or(
-            "work requires list, show, create, update, link, unlink, note, expectations, decision-request, decision-answer or decision-cancel",
+            "work requires list, show, context, context-page, create, update, link, unlink, note, expectations, decision-request, decision-answer or decision-cancel",
         )?;
         if ![
             "list",
             "show",
+            "context",
+            "context-page",
             "create",
             "update",
             "link",

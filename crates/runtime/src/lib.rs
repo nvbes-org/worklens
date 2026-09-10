@@ -2,6 +2,7 @@ pub mod catalog;
 pub mod catalog_cargo;
 pub mod catalog_nx;
 pub mod command;
+mod context_snapshot;
 pub mod documents;
 pub mod git;
 pub mod github;
@@ -16,6 +17,8 @@ pub mod service_work;
 pub mod storage;
 pub mod storage_work;
 pub mod transport;
+mod work_context;
+mod work_context_sources;
 mod work_decisions;
 
 #[derive(Debug, thiserror::Error)]

@@ -5,6 +5,7 @@ pub mod model;
 pub mod pr_impact;
 pub mod protocol;
 pub mod work;
+pub mod work_context;
 
 pub use agents::*;
 pub use decision::*;
@@ -13,6 +14,7 @@ pub use model::*;
 pub use pr_impact::*;
 pub use protocol::*;
 pub use work::*;
+pub use work_context::*;
 
 pub fn now() -> String {
     chrono::Utc::now().to_rfc3339()

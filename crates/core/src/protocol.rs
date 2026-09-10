@@ -41,6 +41,8 @@ pub enum Operation {
     Search,
     WorkList,
     WorkShow,
+    WorkContext,
+    WorkContextPage,
     WorkCreate,
     WorkUpdate,
     WorkLink,

@@ -4,6 +4,7 @@ import { ErrorNotice } from '../components/common';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useWorkChange, workStates } from '../lib/work';
+import { WorkContext } from './work-context';
 import { WorkDecisions } from './work-decisions';
 import { WorkExpectations } from './work-expectations';
 import { WorkLinks } from './work-links';
@@ -109,6 +110,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
         onDirty={() => setDecisionDirty(true)}
       />
       <WorkLinks item={item} apply={apply} busy={busy || dirty || expectationDirty || decisionDirty} />
+      <WorkContext item={item} disabled={busy || dirty || expectationDirty || decisionDirty} />
       <section className="border-t pt-5">
         <h3 className="mb-3 font-medium">Local notes</h3>
         <form

@@ -7,6 +7,7 @@ use std::{
 use worklens_core::*;
 
 pub struct Service {
+    pub(crate) contexts: Mutex<crate::context_snapshot::ContextSnapshots>,
     pub store: Mutex<Store>,
     pub auth: crate::github_auth::Auth,
     pub github: crate::github::Github,
@@ -23,6 +24,7 @@ pub fn text<'a>(params: &'a Value, key: &str) -> Result<&'a str> {
 impl Service {
     pub fn new(path: &Path) -> Result<Self> {
         Ok(Self {
+            contexts: Default::default(),
             store: Mutex::new(Store::open(path)?),
             auth: Default::default(),
             github: Default::default(),
@@ -178,6 +180,16 @@ impl Service {
                 json!({ "path": text(p, "path")?, "text": crate::documents::read(root, text(p, "path")?).await?, "provenance": Provenance::observed("repository documentation") }),
             ),
             Operation::Context => crate::service_context::context(self, &repo, p).await,
+            Operation::WorkContext => crate::work_context::collect(self, &repo, p).await,
+            Operation::WorkContextPage => {
+                let params: WorkContextPageRequest = serde_json::from_value(p.clone())?;
+                Ok(serde_json::to_value(
+                    self.contexts
+                        .lock()
+                        .map_err(|_| error("Context storage unavailable"))?
+                        .page(&repo, &params)?,
+                )?)
+            }
             Operation::Search => {
                 crate::service_context::search(self, &repo, text(p, "query")?).await
             }

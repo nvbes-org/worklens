@@ -67,6 +67,8 @@ Decision records use `worklens work decision-request|decision-answer|decision-ca
 
 ## Selected context
 
+For a task-scoped, revision-checked export, use `worklens work context` and `worklens work context-page`, or MCP `work_context` / `work_context_page`. See [selected work context](work-context.md) for explicit selection, shared snapshots, Markdown/JSON output and byte limits. The repository-wide command below remains a separate legacy export; its offsets recollect current data rather than retaining a work snapshot.
+
 ```sh
 worklens documents --repo /absolute/path/to/repository
 worklens document --repo /absolute/path/to/repository --params '{"path":"README.md"}'

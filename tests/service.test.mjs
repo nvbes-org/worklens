@@ -106,6 +106,17 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     assert.equal(secondResult.result.isError,false);
     const cancelled=await cli('work','decision-cancel','--repo',repository,'--params',JSON.stringify({...work,eventId:'decision-cancel',expectedRevision:6,change:{action:'decision_cancel',id:'cancel-me',reason:'Superseded test'}}));
     assert.equal(cancelled.item.decisions[1].resolution.state,'cancelled');
+    const contextResult=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'work_context',repository:opened.path,params:{id:work.id,expectedRevision:7,selection:{sections:['summary','decisions']},limit:1}}});
+    assert.equal(contextResult.result.isError,false);
+    const context=JSON.parse(contextResult.result.content[0].text);
+    assert.equal(context.nextOffset,1);
+    const pageParams=JSON.stringify({snapshotId:context.snapshotId,offset:0,limit:1});
+    assert.deepEqual(await cli('work','context-page','--repo',repository,'--params',pageParams),context);
+    const markdown=(await run(binary,['work','context-page','--repo',repository,'--params',pageParams,'--format','markdown'],{env})).stdout;
+    assert.equal(markdown,context.markdown+'\n');
+    const contextPage=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'work_context_page',repository:opened.path,params:{snapshotId:context.snapshotId,offset:1}}});
+    assert.equal(contextPage.result.isError,false);
+    assert.equal(JSON.parse(contextPage.result.content[0].text).items[0].kind,'decision');
     const invalidValidation=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'validations',repository:opened.path,params:{slug:'owner/repo',sha:'bad'}}});
     assert.equal(invalidValidation.result.isError,true);
     assert.match(invalidValidation.result.content[0].text,/40-character/);
@@ -123,6 +134,7 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     await stop(mcp);
     await stop(daemon);
     await start();
+    await assert.rejects(cli('work','context-page','--repo',repository,'--params',pageParams),error=>error.stderr.includes('snapshot unavailable'));
     assert.equal((await cli('agents', '--repo', repository))[0].state, 'completed');
     const persisted = await cli('work','show','--repo',repository,'--params',JSON.stringify({id:work.id}));
     assert.equal(persisted.item.state,'todo');

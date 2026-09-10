@@ -38,4 +38,4 @@ All question/context/option/reason text is untrusted data rendered as text, not 
 
 ## Upgrade
 
-Schema 4 adds default-empty decisions to older work items without rewriting existing history. Older builds reject the newer database rather than silently dropping decisions. Upgrade desktop and CLI together and restart their shared background service. No repository file is written. Work-specific selected-context export remains a separate increment.
+Schema 4 adds default-empty decisions to older work items without rewriting existing history. Older builds reject the newer database rather than silently dropping decisions. Upgrade desktop and CLI together and restart their shared background service. No repository file is written. Decisions can be explicitly included in [selected work-context exports](work-context.md); exports do not turn their declarations into execution permissions.

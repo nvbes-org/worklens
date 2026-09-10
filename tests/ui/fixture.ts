@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import type { WorkItem, WorkEvent, WorkMutation } from '@worklens/contracts';
+import type { WorkItem, WorkEvent, WorkMutation, WorkContextPage, WorkContextSelection, WorkContextItem } from '@worklens/contracts';
 
 export async function seed(page: Page) {
   await page.addInitScript(() => {
@@ -15,9 +15,31 @@ export async function seed(page: Page) {
     let connected=false;
     const workItems = new Map<string,WorkItem>();
     const workEvents = new Map<string,WorkEvent[]>();
+    const contextSnapshots = new Map<string,WorkContextPage>();
     Object.assign(window,{__WORKLENS_TRANSPORT__:async (request:{operation:string;params:Record<string,unknown>})=>{
       let data:unknown=null;
       switch(request.operation){
+        case 'work_context':case 'work_context_page':{
+          let snapshot:WorkContextPage|undefined;
+          if(request.operation==='work_context'){
+            const item=workItems.get(String(request.params.id));
+            if(!item||item.revision!==request.params.expectedRevision)return {version:1,data:null,error:'Revision conflict: reload work item'};
+            const selection=request.params.selection as WorkContextSelection;
+            const items:WorkContextItem[]=[];
+            if(selection.sections.includes('summary'))items.push({kind:'summary',key:'summary:0',data:{title:item.title,objective:item.objective,criteria:item.criteria,state:item.state},sources:[source]});
+            if(selection.sections.includes('links'))item.links.forEach((link,i)=>items.push({kind:'link',key:`link:${i}`,data:link,sources:[source]}));
+            if(selection.sections.includes('decisions'))item.decisions.forEach((decision,i)=>items.push({kind:'decision',key:`decision:${i}`,data:decision,sources:[source]}));
+            if(selection.sections.includes('expectations'))item.expectations.forEach((expectation,i)=>items.push({kind:'expectation',key:`expectation:${i}`,data:expectation,sources:[source]}));
+            selection.documentPaths.forEach(path=>items.push({kind:'document',key:path,data:{path,text:'# Fixture\n<script>window.pwned=true</script>'},sources:[source]}));
+            snapshot={snapshotId:crypto.randomUUID(),repositoryId:repo.id,repositoryPath:repo.path,workId:item.id,workRevision:item.revision,collectedAt:source.collectedAt,expiresAt:'2026-09-10T10:15:00Z',offset:0,nextOffset:null,total:items.length,items,warning:'Selected local declarations; no automatic execution.',markdown:''};
+            contextSnapshots.set(snapshot.snapshotId,structuredClone(snapshot));
+          }else snapshot=contextSnapshots.get(String(request.params.snapshotId));
+          if(!snapshot)return {version:1,data:null,error:'Context snapshot unavailable: expired'};
+          const offset=Number(request.params.offset??0);const limit=Number(request.params.limit??30);
+          const items=snapshot.items.slice(offset,offset+limit);
+          const page={...snapshot,offset,items,nextOffset:offset+items.length<snapshot.total?offset+items.length:null};
+          data={...page,markdown:`# Worklens selected context\n\n${JSON.stringify(page,null,2)}`};break;
+        }
         case 'work_list':data={items:[...workItems.values()].filter(w=>(!request.params.reference||w.links.some(l=>l.reference===request.params.reference))&&(!request.params.state||w.state===request.params.state)),nextOffset:null};break;
         case 'work_show':data={item:workItems.get(String(request.params.id)),events:workEvents.get(String(request.params.id))??[],nextOffset:null};break;
         case 'work_create':case 'work_update':case 'work_link':case 'work_unlink':case 'work_note':case 'work_expectations':case 'work_decision_request':case 'work_decision_answer':case 'work_decision_cancel':{

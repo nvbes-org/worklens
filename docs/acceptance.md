@@ -52,7 +52,7 @@ The work-item lifecycle is implemented across desktop, CLI and MCP: create from 
 
 Validation for this increment: all six Nx check/lint/test targets passed without cache; 18 Rust tests, 12 Playwright scenarios and the real CLI/socket/MCP integration test passed. The native app created a real local Worklens delivery item; CLI reads returned that item, CLI added its PR/worktree/agent links, and native Reload displayed revision 4 with all three links and their history. The app and DMG were built and strict ad-hoc code-signature verification passed. No native performance claim is made.
 
-See [work-item semantics](work-items.md). Work-context export remains pending; locally declared validation expectations and structured decisions are implemented below.
+See [work-item semantics](work-items.md). Locally declared validation expectations, structured decisions and selected local work-context export are implemented below.
 
 ### Functional increment: full PR impact
 
@@ -77,6 +77,14 @@ Work items now expose requests with explicit scope/options, motivated answers an
 All six local Nx check/lint/test targets passed: 37 Rust tests, 19 Playwright scenarios and the real socket/CLI/MCP integration. Added tests cover schema-3 upgrade, repository isolation, duplicate IDs/events, terminal state protection, concurrent answer/cancellation, invalid options/reasons, restart persistence, explicit UI selection and retained drafts on conflict. The new UI reuses the existing shadcn Input/Button components and semantic form controls without new dependencies.
 
 The app and DMG were rebuilt; strict ad-hoc signature verification passed. Native acceptance is still pending; the prior Keychain authorization block is not considered resolved by a request to continue development. Local tests use isolated databases and do not require the user's GitHub token. The new app was not launched against the active user database for this increment.
+
+### Functional increment: selected work context
+
+Desktop, CLI and MCP share revision-checked, explicit work-context selection and temporary paginated snapshots. Summary, declared references, decisions, local expectations, confirmed local sources and chosen indexed documents are independent selections. Missing sources stay explicit. Export never starts Nx or reads GitHub credentials; PR discussions, CI logs, notes and remote evidence aggregation are excluded. See [selection and bounds](work-context.md).
+
+Local verification: 43 Rust tests, 21 Playwright scenarios and the real CLI/socket/MCP integration passed. Coverage includes serialized byte budgets, stable pages after source/work changes, source isolation, symlink escapes, unavailable cached catalogs, expiry/eviction/restart, inert source rendering and actual browser clipboard output. All six Nx check/lint/test targets passed on the final run; three engine targets reused their verified outputs. One earlier engine test target failed and its unchanged retry passed; the cause was not isolated, and Nx reported the task as flaky. No test timeout or retry setting was increased.
+
+The export skill informed explicit bounded pages instead of an unbounded bulk dump. Existing UI components are reused. The CLI, macOS app and DMG were rebuilt; strict ad-hoc app signature verification passed. Native acceptance remains separate from simulated browser tests; the prior Keychain authorization issue is not treated as resolved, and the new app was not launched against the active user database during this increment.
 
 ### Remaining native acceptance
 

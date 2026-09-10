@@ -1,0 +1,10 @@
+Worklens
+Copyright 2026 Worklens contributors
+
+Worklens source code is licensed under Apache-2.0.
+Bundled third-party dependencies retain their respective licenses.
+In particular, ELK/elkjs is distributed under EPL-2.0 with the upstream
+secondary-license option; source is available at https://github.com/kieler/elkjs.
+React Flow is provided by xyflow under MIT: https://github.com/xyflow/xyflow.
+UI primitives originate from shadcn/ui under MIT: https://github.com/shadcn-ui/ui.
+See Cargo.lock and pnpm-lock.yaml for exact dependency versions.

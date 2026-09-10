@@ -1,0 +1,9 @@
+{
+  "name": "@worklens/desktop",
+  "private": true,
+  "version": "0.1.0-alpha.1",
+  "type": "module",
+  "dependencies": {
+    "radix-ui": "^1.6.7"
+  }
+}

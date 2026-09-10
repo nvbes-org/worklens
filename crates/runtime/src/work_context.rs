@@ -1,0 +1,179 @@
+use crate::{
+    Result,
+    context_snapshot::{Snapshot, bounds},
+    error,
+    service::Service,
+};
+use serde_json::{Value, json};
+use worklens_core::*;
+
+fn validate(selection: &WorkContextSelection, work: &WorkItem) -> Result<()> {
+    for (i, section) in selection.sections.iter().enumerate() {
+        if selection.sections[..i].contains(section) {
+            return Err(error("Duplicate context section"));
+        }
+    }
+    let groups = [
+        &selection.project_ids,
+        &selection.agent_ids,
+        &selection.worktree_paths,
+        &selection.document_paths,
+        &selection.note_ids,
+        &selection.pr_urls,
+    ];
+    let count = groups.iter().map(|g| g.len()).sum::<usize>() + selection.sections.len();
+    if selection.pr_urls.len() > 1 {
+        return Err(error("Select at most one PR evidence dossier per snapshot"));
+    }
+    for url in &selection.pr_urls {
+        crate::work_context_evidence::pr_identity(url)?;
+    }
+    if count == 0 || count > 100 {
+        return Err(error("Select 1–100 context sections or sources explicitly"));
+    }
+    for group in groups {
+        for (i, value) in group.iter().enumerate() {
+            if value.trim().is_empty()
+                || value.len() > 2048
+                || value.contains('\0')
+                || group[..i].contains(value)
+            {
+                return Err(error("Invalid or duplicate context source identifier"));
+            }
+        }
+    }
+    for (kind, ids) in [
+        (WorkLinkKind::Component, &selection.project_ids),
+        (WorkLinkKind::Agent, &selection.agent_ids),
+        (WorkLinkKind::Worktree, &selection.worktree_paths),
+        (WorkLinkKind::Pr, &selection.pr_urls),
+    ] {
+        if ids.iter().any(|id| {
+            !work.links.iter().any(|l| {
+                l.kind == kind && l.status == WorkLinkStatus::Confirmed && &l.reference == id
+            })
+        }) {
+            return Err(error(
+                "Context source must be a confirmed link on this work item",
+            ));
+        }
+    }
+    Ok(())
+}
+
+pub fn declared(work: &WorkItem) -> Provenance {
+    Provenance {
+        source: "local work declaration (not authenticated)".into(),
+        collected_at: work.updated_at.clone(),
+        status: Availability::Available,
+        detail: None,
+        revision: Some(work.revision.to_string()),
+    }
+}
+
+pub async fn collect(service: &Service, repo: &Repository, p: &Value) -> Result<Value> {
+    let p: WorkContextRequest = serde_json::from_value(p.clone())?;
+    let (limit, bytes) = bounds(p.limit, p.max_bytes)?;
+    let work = service.db()?.work_item(&repo.id, &p.id)?;
+    if work.revision != p.expected_revision {
+        return Err(error(
+            "Revision conflict: reload the work item before exporting context",
+        ));
+    }
+    validate(&p.selection, &work)?;
+    let mut items = Vec::new();
+    for section in &p.selection.sections {
+        let (kind, values): (&str, Vec<Value>) = match section {
+            WorkContextSection::Summary => (
+                "summary",
+                vec![
+                    json!({"title":work.title,"objective":work.objective,"criteria":work.criteria,"state":work.state}),
+                ],
+            ),
+            WorkContextSection::Links => (
+                "link",
+                work.links
+                    .iter()
+                    .map(serde_json::to_value)
+                    .collect::<std::result::Result<_, _>>()?,
+            ),
+            WorkContextSection::Decisions => (
+                "decision",
+                work.decisions
+                    .iter()
+                    .map(serde_json::to_value)
+                    .collect::<std::result::Result<_, _>>()?,
+            ),
+            WorkContextSection::Expectations => (
+                "expectation",
+                work.expectations
+                    .iter()
+                    .map(serde_json::to_value)
+                    .collect::<std::result::Result<_, _>>()?,
+            ),
+        };
+        for (i, data) in values.into_iter().enumerate() {
+            items.push(WorkContextItem {
+                kind: kind.into(),
+                key: format!("{kind}:{i}"),
+                data,
+                sources: vec![declared(&work)],
+            });
+        }
+    }
+    for id in &p.selection.note_ids {
+        let note = service.db()?.work_note(&repo.id, &work.id, id)?;
+        if note.revision > work.revision {
+            return Err(error(
+                "Selected note is newer than the requested work revision",
+            ));
+        }
+        items.push(WorkContextItem {
+            kind: "note".into(),
+            key: note.event_id.clone(),
+            data: json!({"eventId":note.event_id,"revision":note.revision,"actor":note.actor,"createdAt":note.created_at,"text":note.details["text"]}),
+            sources: vec![Provenance {
+                source: "explicit local note (not authenticated)".into(),
+                collected_at: note.created_at,
+                status: Availability::Available,
+                detail: None,
+                revision: Some(note.revision.to_string()),
+            }],
+        });
+    }
+    crate::work_context_sources::collect(service, repo, &p.selection, &mut items).await?;
+    for url in &p.selection.pr_urls {
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(90),
+            crate::work_context_evidence::collect(service, repo, &work, url),
+        )
+        .await
+        .unwrap_or_else(|_| {
+            Err(error(
+                "PR evidence collection deadline reached; refresh the dossier",
+            ))
+        });
+        match result {
+            Ok(records) => items.extend(records),
+            Err(failure) => items.push(WorkContextItem {
+                kind: "pr_evidence".into(),
+                key: url.clone(),
+                data: Value::Null,
+                sources: vec![Provenance::unavailable(url, &failure.to_string())],
+            }),
+        }
+    }
+    if service.db()?.work_item(&repo.id, &p.id)?.revision != work.revision {
+        return Err(error(
+            "Work item changed while collecting context; reload and export again",
+        ));
+    }
+    let snapshot = Snapshot::new(repo, &work, items)?;
+    let page = snapshot.page(0, limit, bytes)?;
+    service
+        .contexts
+        .lock()
+        .map_err(|_| error("Context storage unavailable"))?
+        .insert(snapshot);
+    Ok(serde_json::to_value(page)?)
+}

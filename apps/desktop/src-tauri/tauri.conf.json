@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Worklens",
+  "version": "0.1.0-alpha.1",
+  "identifier": "dev.worklens.desktop",
+  "build": {
+    "beforeDevCommand": "pnpm exec vite --host 127.0.0.1 --port 1420",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "pnpm exec vite build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{ "title": "Worklens", "width": 1440, "height": 960, "minWidth": 1000, "minHeight": 700 }],
+    "security": { "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:" }
+  },
+  "bundle": { "active": true, "targets": ["app", "dmg"], "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns"], "macOS": {"signingIdentity": "-"}, "resources": {"../../../LICENSE": "LICENSE", "../../../NOTICE": "NOTICE"} }
+}

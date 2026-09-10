@@ -86,6 +86,14 @@ Local verification: 43 Rust tests, 21 Playwright scenarios and the real CLI/sock
 
 The export skill informed explicit bounded pages instead of an unbounded bulk dump. Existing UI components are reused. The CLI, macOS app and DMG were rebuilt; strict ad-hoc app signature verification passed. Native acceptance remains separate from simulated browser tests; the prior Keychain authorization issue is not treated as resolved, and the new app was not launched against the active user database during this increment.
 
+### Functional increment: individual notes in work context
+
+The context picker now selects individual local notes by stable event ID, with paginated history and removal across pages. Nothing is preselected. Desktop, CLI and MCP share the same note lookup, scoped to the selected work item and repository. Export preserves original declared actor/date/revision, rejects stale work revisions and invalid/foreign/non-note IDs, and retains the existing snapshot lifetime and byte limits. No database migration or automatic history export is introduced.
+
+All six local Nx check/lint/test targets passed; the final run reused three unchanged engine outputs. 46 Rust tests, 24 Playwright scenarios and one real CLI/socket/MCP integration passed. Added coverage exercises opt-in selection, event ordering, cross-work/repository isolation, history beyond 50 events, persistence, stable snapshot pages, Unicode byte budgets, inert note text, deselection and revision conflicts. The first pagination browser test installed its fixture after the query cache was populated; setup now precedes the initial picker query. No timeout or retry setting was increased.
+
+The CLI, macOS app and DMG were rebuilt; strict ad-hoc signature verification passed. Native acceptance remains separate: this increment is tested on isolated databases and simulated browser transport, not against the active user database or the prior Keychain authorization prompt.
+
 ### Remaining native acceptance
 
 1. The GitHub App connection is working. Complete the remaining live recipe in [GitHub setup](github.md), including expiration/revocation and a fork PR.

@@ -3,6 +3,20 @@ use rusqlite::{OptionalExtension, params};
 use worklens_core::*;
 
 impl Store {
+    pub fn work_note(&self, repo: &str, work_id: &str, event_id: &str) -> Result<WorkEvent> {
+        let text: Option<String> = self.connection.query_row(
+            "SELECT value FROM work_events WHERE repository_id=?1 AND work_id=?2 AND event_id=?3",
+            [repo, work_id, event_id], |r| r.get(0),
+        ).optional()?;
+        let note: WorkEvent = serde_json::from_str(
+            &text.ok_or_else(|| error("Selected note not found on this work item"))?,
+        )?;
+        if note.action != "note" || note.details["text"].as_str().is_none() {
+            return Err(error("Selected event is not a local note"));
+        }
+        Ok(note)
+    }
+
     pub fn work_item(&self, repo: &str, id: &str) -> Result<WorkItem> {
         let text: Option<String> = self
             .connection

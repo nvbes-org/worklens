@@ -23,6 +23,8 @@ pub struct WorkContextSelection {
     pub worktree_paths: Vec<String>,
     #[serde(default)]
     pub document_paths: Vec<String>,
+    #[serde(default)]
+    pub note_ids: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]

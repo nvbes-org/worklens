@@ -106,7 +106,7 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     assert.equal(secondResult.result.isError,false);
     const cancelled=await cli('work','decision-cancel','--repo',repository,'--params',JSON.stringify({...work,eventId:'decision-cancel',expectedRevision:6,change:{action:'decision_cancel',id:'cancel-me',reason:'Superseded test'}}));
     assert.equal(cancelled.item.decisions[1].resolution.state,'cancelled');
-    const contextResult=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'work_context',repository:opened.path,params:{id:work.id,expectedRevision:7,selection:{sections:['summary','decisions']},limit:1}}});
+    const contextResult=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'work_context',repository:opened.path,params:{id:work.id,expectedRevision:7,selection:{sections:['summary','decisions'],noteIds:['work-note']},limit:1}}});
     assert.equal(contextResult.result.isError,false);
     const context=JSON.parse(contextResult.result.content[0].text);
     assert.equal(context.nextOffset,1);
@@ -117,6 +117,14 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     const contextPage=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'work_context_page',repository:opened.path,params:{snapshotId:context.snapshotId,offset:1}}});
     assert.equal(contextPage.result.isError,false);
     assert.equal(JSON.parse(contextPage.result.content[0].text).items[0].kind,'decision');
+    const noteRecords=JSON.parse(contextPage.result.content[0].text).items;
+    assert.deepEqual(noteRecords.map(item=>item.kind),['decision','decision','note']);
+    assert.equal(noteRecords[2].data.eventId,'work-note');
+    assert.equal(noteRecords[2].data.text,'MCP local note');
+    assert.equal(noteRecords[2].data.actor,'integration-test');
+    assert.equal(noteRecords[2].data.revision,2);
+    const noteOnly=await cli('work','context','--repo',repository,'--params',JSON.stringify({id:work.id,expectedRevision:7,selection:{noteIds:['work-note']}}));
+    assert.deepEqual(noteOnly.items,[noteRecords[2]]);
     const invalidValidation=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'validations',repository:opened.path,params:{slug:'owner/repo',sha:'bad'}}});
     assert.equal(invalidValidation.result.isError,true);
     assert.match(invalidValidation.result.content[0].text,/40-character/);

@@ -18,6 +18,7 @@ fn validate(selection: &WorkContextSelection, work: &WorkItem) -> Result<()> {
         &selection.agent_ids,
         &selection.worktree_paths,
         &selection.document_paths,
+        &selection.note_ids,
     ];
     let count = groups.iter().map(|g| g.len()).sum::<usize>() + selection.sections.len();
     if count == 0 || count > 100 {
@@ -111,6 +112,26 @@ pub async fn collect(service: &Service, repo: &Repository, p: &Value) -> Result<
                 sources: vec![declared(&work)],
             });
         }
+    }
+    for id in &p.selection.note_ids {
+        let note = service.db()?.work_note(&repo.id, &work.id, id)?;
+        if note.revision > work.revision {
+            return Err(error(
+                "Selected note is newer than the requested work revision",
+            ));
+        }
+        items.push(WorkContextItem {
+            kind: "note".into(),
+            key: note.event_id.clone(),
+            data: json!({"eventId":note.event_id,"revision":note.revision,"actor":note.actor,"createdAt":note.created_at,"text":note.details["text"]}),
+            sources: vec![Provenance {
+                source: "explicit local note (not authenticated)".into(),
+                collected_at: note.created_at,
+                status: Availability::Available,
+                detail: None,
+                revision: Some(note.revision.to_string()),
+            }],
+        });
     }
     crate::work_context_sources::collect(service, repo, &p.selection, &mut items).await?;
     if service.db()?.work_item(&repo.id, &p.id)?.revision != work.revision {

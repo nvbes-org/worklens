@@ -11,6 +11,7 @@ import { ErrorNotice } from '../components/common';
 import { Button } from '../components/ui/button';
 import { query } from '../lib/api';
 import { useSession } from '../lib/session';
+import { WorkContextNotes } from './work-context-notes';
 
 const sections: [WorkContextSection, string][] = [
   ['summary', 'Saved objective, criteria and state'],
@@ -24,6 +25,7 @@ const empty: WorkContextSelection = {
   agentIds: [],
   worktreePaths: [],
   documentPaths: [],
+  noteIds: [],
 };
 
 export function WorkContext({ item, disabled }: { item: WorkItem; disabled: boolean }) {
@@ -48,7 +50,10 @@ export function WorkContext({ item, disabled }: { item: WorkItem; disabled: bool
     setError('');
     setCopied(false);
   }
-  function toggle(group: 'projectIds' | 'agentIds' | 'worktreePaths' | 'documentPaths', id: string) {
+  function toggle(
+    group: 'projectIds' | 'agentIds' | 'worktreePaths' | 'documentPaths' | 'noteIds',
+    id: string,
+  ) {
     select({
       ...selection,
       [group]: selection[group].includes(id)
@@ -163,6 +168,11 @@ export function WorkContext({ item, disabled }: { item: WorkItem; disabled: bool
                 </label>
               ))}
             </div>
+            <WorkContextNotes
+              item={item}
+              selected={selection.noteIds}
+              toggle={(id) => toggle('noteIds', id)}
+            />
             <Button disabled={count === 0 || count > 100} onClick={() => void preview()}>
               {busy ? 'Collecting selected context…' : 'Preview work context'}
             </Button>

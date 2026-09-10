@@ -69,7 +69,7 @@ export type WorkMutation = { id: string, eventId: string, actor: string,
  */
 expectedRevision: number, change: WorkChange, };
 export type WorkContextSection = "summary" | "links" | "decisions" | "expectations";
-export type WorkContextSelection = { sections: Array<WorkContextSection>, projectIds: Array<string>, agentIds: Array<string>, worktreePaths: Array<string>, documentPaths: Array<string>, };
+export type WorkContextSelection = { sections: Array<WorkContextSection>, projectIds: Array<string>, agentIds: Array<string>, worktreePaths: Array<string>, documentPaths: Array<string>, noteIds: Array<string>, };
 export type WorkContextRequest = { id: string, expectedRevision: number, selection: WorkContextSelection, limit: number | null, maxBytes: number | null, };
 export type WorkContextPageRequest = { snapshotId: string, offset: number, limit: number | null, maxBytes: number | null, };
 export type WorkContextItem = { kind: string, key: string, data: JsonValue, sources: Array<Provenance>, };

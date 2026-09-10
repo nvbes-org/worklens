@@ -7,9 +7,10 @@ From a work item, choose **Choose context**, select the information to include, 
 - `sections`: `summary` (title, objective, criteria, state), `links` (declared references and their candidate/confirmed/rejected status), `decisions` (requests and outcomes), `expectations` (local criteria, **not CI results**). Each section includes only its own data, not an entire hidden work item.
 - `projectIds`, `agentIds`, `worktreePaths`: explicit selections from **confirmed links** on this work item. Candidate links can be exported as references with `links`, but do not authorize source expansion. Foreign/unlinked identifiers reject the selection.
 - `documentPaths`: explicitly selected README/ADR/instruction documents from the selected repository/worktree index. These documents are not implicitly associated with the task. Absolute paths, path escapes, external symlinks and non-indexed documents do not expose file contents.
+- `noteIds`: explicitly selected note event IDs from this work item. Each note exports its text, event ID, original revision, declared actor and date. Missing IDs, non-note events, duplicate IDs and notes from another work item/repository reject the export. Notes are excluded when this field is absent or empty; there is no implicit “all notes” section.
 - Projects use the already-collected catalog, marked stale with its original provenance. Export never invokes Nx/plugins or installs dependencies. If no cached catalog is available, collect it explicitly in Architecture first.
 - Agent data includes caller-declared state and presence, not conversations. Worktree records include path, branch, HEAD and changed-file status, not remotes, diffs or commit messages.
-- No GitHub network requests, keychain reads, PR discussions, CI logs, hidden conversations, notes or full history are included. PR/issue links are references only. Remote evidence packets and individual note selection are not part of this increment.
+- No GitHub network requests, keychain reads, PR discussions, CI logs, hidden conversations, unselected notes or full history are included. PR/issue links are references only. Remote evidence packets are not part of this increment.
 
 Each record carries sources, dates and availability. An unavailable linked source/document becomes an explicit `data:null` record with an unavailable source; other selected records remain usable. Local work is read at a checked revision and checked again after collection. Git/document/agent observations have their own collection context and are **not** a globally atomic repository snapshot. Selected user-authored text can itself contain sensitive material: review before sharing. Actor names and decisions are not authenticated human approvals.
 
@@ -20,6 +21,8 @@ Read the work item first to obtain its current revision. For a work item at revi
 ```sh
 worklens work context --repo /path/to/repo --params '{"id":"task-42","expectedRevision":7,"selection":{"sections":["summary","decisions"],"documentPaths":["README.md"]},"limit":30,"maxBytes":200000}'
 ```
+
+To select notes, use `worklens work show --repo /path/to/repo --params '{"id":"task-42"}'` (MCP: `work_show`). Follow its `nextOffset` with an `offset` parameter for older history; select `eventId` values from events with `action: "note"`. For example, add `"noteIds":["note-event-id"]` to `selection`. Notes are collected in selection order after work sections and before linked sources/documents. The desktop note picker pages through the same history, keeps selections across pages and exposes a remove button for every selected ID. A changed work revision requires reloading before collection; a preview must be regenerated after selection changes.
 
 The response includes `snapshotId`, `workRevision`, `collectedAt`, `expiresAt`, `items`, `total`, `offset`, `nextOffset`, warnings and `markdown`. Follow `nextOffset` with **the same snapshot ID**; do not start a new export for each page:
 

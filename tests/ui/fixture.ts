@@ -31,6 +31,7 @@ export async function seed(page: Page) {
             if(selection.sections.includes('decisions'))item.decisions.forEach((decision,i)=>items.push({kind:'decision',key:`decision:${i}`,data:decision,sources:[source]}));
             if(selection.sections.includes('expectations'))item.expectations.forEach((expectation,i)=>items.push({kind:'expectation',key:`expectation:${i}`,data:expectation,sources:[source]}));
             selection.documentPaths.forEach(path=>items.push({kind:'document',key:path,data:{path,text:'# Fixture\n<script>window.pwned=true</script>'},sources:[source]}));
+            (selection.noteIds??[]).forEach(id=>{const note=workEvents.get(item.id)?.find(e=>e.eventId===id&&e.action==='note');if(!note)throw new Error('Selected note not found');const details=note.details as {text:string};items.push({kind:'note',key:id,data:{eventId:id,revision:note.revision,actor:note.actor,createdAt:note.createdAt,text:details.text},sources:[{...source,source:'explicit local note (not authenticated)',revision:String(note.revision),collectedAt:note.createdAt}]});});
             snapshot={snapshotId:crypto.randomUUID(),repositoryId:repo.id,repositoryPath:repo.path,workId:item.id,workRevision:item.revision,collectedAt:source.collectedAt,expiresAt:'2026-09-10T10:15:00Z',offset:0,nextOffset:null,total:items.length,items,warning:'Selected local declarations; no automatic execution.',markdown:''};
             contextSnapshots.set(snapshot.snapshotId,structuredClone(snapshot));
           }else snapshot=contextSnapshots.get(String(request.params.snapshotId));
@@ -41,7 +42,7 @@ export async function seed(page: Page) {
           data={...page,markdown:`# Worklens selected context\n\n${JSON.stringify(page,null,2)}`};break;
         }
         case 'work_list':data={items:[...workItems.values()].filter(w=>(!request.params.reference||w.links.some(l=>l.reference===request.params.reference))&&(!request.params.state||w.state===request.params.state)),nextOffset:null};break;
-        case 'work_show':data={item:workItems.get(String(request.params.id)),events:workEvents.get(String(request.params.id))??[],nextOffset:null};break;
+        case 'work_show':{const events=workEvents.get(String(request.params.id))??[];const offset=Number(request.params.offset??0);data={item:workItems.get(String(request.params.id)),events:events.slice(offset,offset+50),nextOffset:events.length>offset+50?offset+50:null};break;}
         case 'work_create':case 'work_update':case 'work_link':case 'work_unlink':case 'work_note':case 'work_expectations':case 'work_decision_request':case 'work_decision_answer':case 'work_decision_cancel':{
           const p=request.params as unknown as WorkMutation;
           const c=p.change;

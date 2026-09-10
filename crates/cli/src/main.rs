@@ -9,7 +9,7 @@ use worklens_core::{Operation, PROTOCOL_VERSION, Request};
     about = "Local repository and agent observability. All queries use the shared Worklens service."
 )]
 struct Cli {
-    #[arg(value_parser = ["serve", "mcp", "open", "recent", "trust", "status", "projects", "graph", "tasks", "impact", "git", "diff", "documents", "document", "issues", "prs", "pr", "issue", "ci", "run", "logs", "context", "doctor", "agents", "agent", "search", "work"])]
+    #[arg(value_parser = ["serve", "mcp", "open", "recent", "trust", "status", "projects", "graph", "tasks", "impact", "pr-impact", "git", "diff", "documents", "document", "issues", "prs", "pr", "issue", "ci", "run", "logs", "context", "doctor", "agents", "agent", "search", "work"])]
     command: String,
     /// Agent action, work action (list/show/create/update/link/unlink/note), or repository path for open.
     argument: Option<String>,
@@ -61,6 +61,11 @@ async fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         format!("work_{action}")
     } else {
         cli.command.clone()
+    };
+    let name = if name == "pr-impact" {
+        "pr_impact".into()
+    } else {
+        name
     };
     let operation: Operation = serde_json::from_value(json!(name))?;
     let mut params: Value = serde_json::from_str(&cli.params)?;

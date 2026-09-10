@@ -6,7 +6,7 @@ GitHub delivery, and explicitly reported agent activity.
 Worklens is an independent project. Its first alpha targets macOS Apple Silicon.
 Implementation and acceptance results are tracked in [acceptance](docs/acceptance.md).
 
-The next functional increment adds [local work items](docs/work-items.md): objectives, declared source links, notes and revision-protected history shared by desktop, CLI and MCP.
+Functional increments include [local work items](docs/work-items.md) and [full PR impact](docs/pr-impact.md): objectives, declared source links, notes, revision-protected history, all-page file collection and explained local dependency reachability shared by desktop, CLI and MCP.
 
 ## Start locally
 

@@ -71,6 +71,10 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     assert.deepEqual(JSON.parse(result.result.content[0].text), sessions);
     const denied = await rpc('tools/call', { name: 'worklens_query', arguments: { operation: 'trust', repository: opened.path } });
     assert.equal(denied.result.isError, true);
+    await assert.rejects(cli('pr-impact','--repo',repository,'--params','{"number":0}'),error=>error.stderr.includes('Select a positive PR number'));
+    const invalidImpact = await rpc('tools/call',{name:'worklens_query',arguments:{operation:'pr_impact',repository:opened.path,params:{number:0}}});
+    assert.equal(invalidImpact.result.isError,true);
+    assert.equal(invalidImpact.result.content[0].text,'Select a positive PR number');
     const work = {id:'work-integration',eventId:'work-create',actor:'integration-test',expectedRevision:0,
       change:{action:'create',title:'Delivery task',objective:'Verify shared work state',criteria:'Same state across clients',links:[{kind:'agent',reference:agent.id,status:'confirmed',reason:'Explicit test association'}]}};
     const created = await cli('work','create','--repo',repository,'--params',JSON.stringify(work));

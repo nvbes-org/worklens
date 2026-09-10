@@ -2,8 +2,9 @@
 
 Date: 2026-09-10. Target machine: Apple M3 Max, macOS 26.6.2.
 
-Status: **local engineering alpha; end-to-end GitHub acceptance remains pending**.
-Do not interpret the presence of GitHub UI or passing mocks as a completed live connection.
+Status: **local engineering alpha; complete acceptance remains pending**.
+Live GitHub collection and native PR impact are verified below. Revocation/expiry,
+fork and complete cross-view acceptance must not be inferred from passing mocks.
 
 ## Delivered surface
 
@@ -11,7 +12,7 @@ Do not interpret the presence of GitHub UI or passing mocks as a completed live 
 | --- | --- | --- |
 | Desktop and local Git | Tauri app, repository/recent selection, diagnostics, worktrees, branches, status, paged history/commit graph, bounded diffs | Real native app opened with nvbes; disposable Git edge cases |
 | Polyglot catalog | Passive manifests, offline Cargo metadata/fallback, trusted local Nx/pnpm, graph provenance, dependants, task graph, impact | Real nvbes and Worklens; mixed/cycle/feature/missing-tool tests |
-| GitHub | Configurable App Device Flow, Keychain, issue/PR pages and details, exact-SHA checks, jobs/logs, ETag/backoff and stale snapshots | HTTP and UI fixtures; real App authorization pending |
+| GitHub | Configurable App Device Flow, Keychain, issue/PR pages and details, exact-SHA checks, jobs/logs, ETag/backoff and stale snapshots | HTTP/UI fixtures; real authenticated collection and native PR impact verified; full acceptance still pending |
 | Agents / CLI / MCP | Explicit session protocol, task/presence separation, transactional event deduplication, shared queries and selected context | Real CLI/socket/MCP stdio parity and restart test |
 | Cockpit / local packaging | Overview, delivery summary, local search, source navigation, docs/context selection, local app and DMG | Browser tests and native local launch; notarization intentionally excluded |
 
@@ -51,11 +52,19 @@ The work-item lifecycle is implemented across desktop, CLI and MCP: create from 
 
 Validation for this increment: all six Nx check/lint/test targets passed without cache; 18 Rust tests, 12 Playwright scenarios and the real CLI/socket/MCP integration test passed. The native app created a real local Worklens delivery item; CLI reads returned that item, CLI added its PR/worktree/agent links, and native Reload displayed revision 4 with all three links and their history. The app and DMG were built and strict ad-hoc code-signature verification passed. No native performance claim is made.
 
-See [work-item semantics and remaining functional scope](work-items.md). This does not claim delivery of complete PR impact, expected validations, structured decisions or work-context export.
+See [work-item semantics](work-items.md). Expected validations, structured decisions and work-context export remain pending.
+
+### Functional increment: full PR impact
+
+The shared `pr_impact` operation collects all available PR file pages, checks base/head revisions before and after, preserves rename/deletion paths, and explains direct components and transitive dependants. Desktop access is available from PR details and linked work items; CLI uses `pr-impact`, MCP uses `pr_impact`. Local graph mismatch, missing connectors, unmatched paths and workspace-wide files remain explicit. See [semantics and bounds](pr-impact.md).
+
+The six Nx check/lint/test targets passed locally for this increment, including 27 Rust tests, 15 Playwright scenarios and the real CLI/socket/MCP integration test. Added fixtures exercise 102 files across two HTTP pages, late errors, invalid/duplicate rows, both SHA changes, final authorization failure, an empty PR and the 3,000-file cap. Browser fixtures exercise later-page impact, detail pagination independence, unverified results and linked work items. These are not a live GitHub or native acceptance claim.
+
+Live recipe at 2026-09-10 15:54 UTC: Worklens PR #1 returned 120/120 files on two pages, with both revision checks matching and six direct local components. The rebuilt native app displayed the same counts and expanded the core component to its matching paths. nvbes PR #217 returned 143/143 files on two pages, 11 direct components and 22 transitive dependants through the CLI. Both results explicitly reported local graph mismatch/partial connectors; execution trust was not granted. These counts describe those snapshots, not later PR revisions. The app/DMG build and strict ad-hoc code-signature verification passed.
 
 ### Initial alpha gates still tracked
 
-1. Register/install a read-only GitHub App, enable Device Flow and provide its public Client ID. Complete the live recipe in [GitHub setup](github.md), including expiration/revocation and a fork PR.
+1. The GitHub App connection is working. Complete the remaining live recipe in [GitHub setup](github.md), including expiration/revocation and a fork PR.
 2. Verify the complete native PR → changed components → exact CI → worktree → declared agent path with that connection. The equivalent mocked React path passes; it is not a substitute for this gate.
 3. Record native first-known-state timing on a quiet machine and repeat under representative repository load.
 4. Check the actual remote GitHub Actions result for the delivered PR; local success does not imply remote CI success.
@@ -64,7 +73,7 @@ See [work-item semantics and remaining functional scope](work-items.md). This do
 
 - One repository at a time in the UI, local desktop alpha only; no multi-user authorization boundary.
 - Passive JavaScript manifests can include archives. Installed pnpm dependency inspection is depth-limited, not a universal lockfile resolver.
-- Large graph canvases show up to 300 matching nodes; collectors and exports have explicit bounds. Impact uses the current local graph and currently selected PR file page.
+- Large graph canvases show up to 300 matching nodes; collectors and exports have explicit bounds. Full PR impact collects all available file pages (up to 3,000) but still uses the current local worktree graph, not an immutable PR checkout.
 - Same-name worktrees without matching source upstream or SHA remain candidates. Same-worktree agents without a declared PR URL are labeled candidates.
 - Search is local names/document paths/agent objectives, not a remote full-text search engine.
 - GitHub refresh tokens, Enterprise hosts, hosted services, public notarization, auto-update, Git/GitHub mutations, orchestration, scaffolding, cache administration and CI generation are not included.

@@ -13,6 +13,9 @@ struct Cached {
 }
 
 #[cfg(test)]
+#[path = "github_impact.tests.rs"]
+mod impact_tests;
+#[cfg(test)]
 #[path = "github.tests.rs"]
 mod tests;
 pub struct Github {

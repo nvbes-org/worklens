@@ -11,7 +11,8 @@ test('connect PR, exact checks, impacted components and declared agent', async (
   await expect(page.getByText('1 matching worktree(s)',{exact:true})).toBeVisible();
   await expect(page.getByText('Rust tests',{exact:true})).toBeVisible();
   await expect(page.getByText('abc123',{exact:true})).toBeVisible();
-  await expect(page.getByText('core',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Analyze entire PR',exact:true}).click();
+  await expect(page.getByText('core · cargo',{exact:true})).toBeVisible();
   await expect(page.getByText(/Example agent: Connect the cockpit/)).toBeVisible();
   expect(failures).toEqual([]);
 });

@@ -1,12 +1,14 @@
 pub mod agents;
 pub mod graph;
 pub mod model;
+pub mod pr_impact;
 pub mod protocol;
 pub mod work;
 
 pub use agents::*;
 pub use graph::*;
 pub use model::*;
+pub use pr_impact::*;
 pub use protocol::*;
 pub use work::*;
 

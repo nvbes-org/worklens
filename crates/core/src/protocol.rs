@@ -16,6 +16,7 @@ pub enum Operation {
     Graph,
     Tasks,
     Impact,
+    PrImpact,
     Documents,
     Document,
     Context,

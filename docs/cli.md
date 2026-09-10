@@ -35,13 +35,14 @@ Connect in desktop Settings first. Default repository comes from `origin`; overr
 worklens prs --repo /absolute/path/to/repository --params '{"state":"open","page":1}'
 worklens issues --repo /absolute/path/to/repository --params '{"page":2}'
 worklens pr --repo /absolute/path/to/repository --params '{"number":12,"page":1}'
+worklens pr-impact --repo /absolute/path/to/repository --params '{"number":12}'
 worklens issue --repo /absolute/path/to/repository --params '{"number":14}'
 worklens ci --repo /absolute/path/to/repository
 worklens run --repo /absolute/path/to/repository --params '{"number":123456}'
 worklens logs --repo /absolute/path/to/repository --params '{"number":789012}'
 ```
 
-`run` uses a workflow run ID; `logs` uses a job ID. Lists/details use pages of 30; detail page numbers apply to all subsections. Read every file page before treating a PR impact summary as complete. Missing permissions/logs surface independently. GitHub issue list responses may contain PR entries, identified by `pull_request` (the desktop filters these).
+`run` uses a workflow run ID; `logs` uses a job ID. Lists/details use pages of 30; detail page numbers apply to all subsections. `pr-impact` separately collects all available file pages, verifies before/after revisions and explains partial results; see [full PR impact](pr-impact.md). MCP exposes the same operation as `pr_impact`. Missing permissions/logs surface independently. GitHub issue list responses may contain PR entries, identified by `pull_request` (the desktop filters these).
 
 ## Explicit agent reporting
 

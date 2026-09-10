@@ -1,33 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import type { Impact } from '@worklens/contracts';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { ErrorNotice, ExternalLink, Loading, Source } from '../components/common';
+import { PrImpactView } from '../components/pr-impact';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { WorkEntry } from '../components/work-entry';
-import { list, num, openUrl, query, record, str } from '../lib/api';
-import { useAgents, useData, useGit, useGraph, useSession } from '../lib/session';
+import { list, num, openUrl, record, str } from '../lib/api';
+import { useAgents, useData, useGit } from '../lib/session';
 import type { GithubEnvelope } from './github';
 
 export function GithubDetail({ kind, number }: { kind: 'pr' | 'issue' | 'run'; number: number }) {
-  const { repo } = useSession();
   const [page, setPage] = useState(1);
   const [job, setJob] = useState(0);
   const result = useData<GithubEnvelope>(kind, { number, page });
   const git = useGit();
-  const graph = useGraph();
   const agents = useAgents();
   const data = record(result.data?.data);
   const item = record(data[kind]);
-  const files = list(record(data.files).data);
-  const paths = files.map((f) => str(f.filename));
-  const impact = useQuery({
-    queryKey: ['impact', repo?.path, paths],
-    queryFn: () => query<Impact>('impact', repo?.path, { paths }),
-    enabled: kind === 'pr' && files.length > 0,
-  });
   const logs = useData<GithubEnvelope>('logs', { number: job }, 0, job > 0);
   const head = record(item.head);
   const headRepo = record(head.repo);
@@ -123,18 +113,6 @@ export function GithubDetail({ kind, number }: { kind: 'pr' | 'issue' | 'run'; n
                   source upstream; association not confirmed.
                 </p>
               )}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {impact.data?.direct.map((id) => (
-                  <Badge variant="outline" key={id}>
-                    {graph.data?.nodes.find((n) => n.id === id)?.name ?? id}
-                  </Badge>
-                ))}
-              </div>
-              {impact.data && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {impact.data.warning} Based on the current page of changed files.
-                </p>
-              )}
               {agents.data
                 ?.filter((a) => a.pr === str(item.html_url) || trees.some((t) => t.path === a.worktree))
                 .map((a) => (
@@ -152,6 +130,7 @@ export function GithubDetail({ kind, number }: { kind: 'pr' | 'issue' | 'run'; n
               </Link>
             </section>
           )}
+          {kind === 'pr' && <PrImpactView number={number} headSha={str(head.sha)} />}
           {[
             'files',
             'checks',

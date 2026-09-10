@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Repository, ToolStatus } from '@worklens/contracts';
 import { useEffect, useState } from 'react';
 import { ErrorNotice, PageTitle } from '../components/common';
+import { GitHubInstallation, WORKLENS_CLIENT_ID } from '../components/github-installation';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -46,7 +47,7 @@ export function SettingsPage() {
     setBusy(true);
     try {
       const device = await query<Device>('github_auth_start', null, {
-        clientId: clientId || auth.data?.clientId || '',
+        clientId: clientId || auth.data?.clientId || WORKLENS_CLIENT_ID,
       });
       setDevice(device);
       await openUrl(device.verificationUri);
@@ -87,7 +88,7 @@ export function SettingsPage() {
         <Input
           id="client-id"
           className="mt-2"
-          placeholder={auth.data?.clientId || 'Iv1.…'}
+          placeholder={auth.data?.clientId || WORKLENS_CLIENT_ID}
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
         />
@@ -108,6 +109,12 @@ export function SettingsPage() {
             </Button>
           )}
         </div>
+        <GitHubInstallation
+          key={`${repo?.path}:${clientId || auth.data?.clientId}:${auth.data?.connected}`}
+          clientId={clientId || auth.data?.clientId || WORKLENS_CLIENT_ID}
+          connected={auth.data?.connected ?? false}
+          repository={repo?.path ?? null}
+        />
         {device && (
           <div className="mt-5 rounded-lg bg-muted p-4">
             <p className="text-sm">Enter this code on GitHub:</p>

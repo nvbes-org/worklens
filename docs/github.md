@@ -1,6 +1,8 @@
 # GitHub App setup
 
-The community build has no hard-coded app registration. A repository administrator must create a GitHub App before real authentication can be accepted.
+The desktop defaults to the public Client ID of **Worklens by nvbes**. In Settings, use **Install / configure GitHub access** to open its GitHub installation page, choose your account or organization and select repositories. After approving on GitHub, return and use **Verify repository access**. This checks live pull-request access for the selected repository, not every permission; stale cached data never counts as success.
+
+Community builds can still use a different Client ID. The bundled installation button is disabled for another App to avoid installing the wrong one. To register your own App:
 
 1. Register a GitHub App under the intended user or organization.
 2. Enable **Device Flow**. Disable webhook delivery; Worklens runs locally and has no webhook endpoint.

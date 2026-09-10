@@ -58,7 +58,7 @@ export async function seed(page: Page) {
         case 'doctor':data={tools:[{tool:'git',available:true,version:'git version 2.50.0'}],protocol:1,dataDirectory:'/fixture-data'};break;
         default:return {version:1,data:null,error:`Not configured in fixture: ${request.operation}`};
       }
-      return {version:1,data,error:null};
+      return {version:1,data:structuredClone(data),error:null};
     }});
   });
   await page.goto('/');

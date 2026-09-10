@@ -50,6 +50,10 @@ test('revision conflict preserves the attempted edit and asks for reload', async
       ? {version:1,data:null,error:'Revision conflict: reload the work item before applying your change'}:original(request);
   });
   await page.getByLabel('Objective',{exact:true}).fill('My unsaved edit');
+  await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Add note',exact:true})).toBeDisabled();
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect(page.getByLabel('Objective',{exact:true})).toHaveValue('My unsaved edit');
   await page.getByRole('button',{name:'Save changes',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('Revision conflict');
   await expect(page.getByLabel('Objective',{exact:true})).toHaveValue('My unsaved edit');

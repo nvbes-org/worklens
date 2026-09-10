@@ -19,6 +19,7 @@ export function WorkLinks({
   const git = useGit();
   const agents = useAgents();
   const graph = useGraph();
+  const localSource = kind === 'worktree' || kind === 'agent' || kind === 'component';
   const options =
     kind === 'worktree'
       ? git.data?.worktrees.map((t) => ({ value: t.path, label: t.path }))
@@ -140,7 +141,7 @@ export function WorkLinks({
         </label>
         <label className="block text-sm" htmlFor="work-reference">
           Source reference
-          {options != null ? (
+          {localSource ? (
             <select
               key={kind}
               name="reference"
@@ -150,7 +151,7 @@ export function WorkLinks({
               className="block max-w-full rounded border bg-white p-2"
             >
               <option value="">Choose a source</option>
-              {options.map((o) => (
+              {(options ?? []).map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>

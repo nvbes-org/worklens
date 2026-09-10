@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import type { WorkDetail, WorkList } from '@worklens/contracts';
 import { useState } from 'react';
@@ -5,6 +6,7 @@ import { Empty, ErrorNotice, Loading, PageTitle } from '../components/common';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { WorkEntry } from '../components/work-entry';
+import { query } from '../lib/api';
 import { useData, useSession } from '../lib/session';
 import { workStates } from '../lib/work';
 import { WorkDetailView } from './work-detail';
@@ -15,6 +17,7 @@ export function WorkPage() {
   return <WorkPageContent key={`${repo?.id}:${workId}:${reference}`} workId={workId} reference={reference} />;
 }
 function WorkPageContent({ workId, reference }: { workId?: string; reference?: string }) {
+  const { repo } = useSession();
   const navigate = useNavigate();
   const [offset, setOffset] = useState(0);
   const [state, setState] = useState('');
@@ -24,7 +27,13 @@ function WorkPageContent({ workId, reference }: { workId?: string; reference?: s
     0,
     !workId,
   );
-  const detail = useData<WorkDetail>('work_show', { id: workId ?? '', offset }, 0, Boolean(workId));
+  const detail = useQuery({
+    queryKey: ['work_show', repo?.path, { id: workId ?? '', offset }],
+    queryFn: () => query<WorkDetail>('work_show', repo?.path, { id: workId ?? '', offset }),
+    enabled: Boolean(repo && workId),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
   return (
     <>
       <PageTitle

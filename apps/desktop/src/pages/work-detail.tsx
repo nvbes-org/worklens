@@ -11,6 +11,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
   const change = useWorkChange();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [dirty, setDirty] = useState(false);
   async function apply(value: WorkChange) {
     setBusy(true);
     setError('');
@@ -31,6 +32,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
       <ErrorNotice error={error} />
       <form
         className="space-y-3"
+        onChange={() => setDirty(true)}
         onSubmit={(event) => {
           event.preventDefault();
           const form = new FormData(event.currentTarget);
@@ -78,7 +80,12 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
         </label>
         <Button disabled={busy}>Save changes</Button>
       </form>
-      <WorkLinks item={item} apply={apply} busy={busy} />
+      {dirty && (
+        <p className="text-sm text-muted-foreground">
+          Save your field changes before editing links or adding a note. Reload discards unsaved fields.
+        </p>
+      )}
+      <WorkLinks item={item} apply={apply} busy={busy || dirty} />
       <section className="border-t pt-5">
         <h3 className="mb-3 font-medium">Local notes</h3>
         <form
@@ -96,7 +103,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
             maxLength={8192}
             placeholder="Not posted to GitHub"
           />
-          <Button disabled={busy}>Add note</Button>
+          <Button disabled={busy || dirty}>Add note</Button>
         </form>
       </section>
       <section className="border-t pt-5">

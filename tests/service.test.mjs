@@ -94,6 +94,18 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     const declared=JSON.parse(expectedResult.result.content[0].text).item;
     assert.deepEqual((await cli('work','show','--repo',repository,'--params',JSON.stringify({id:work.id}))).item,declared);
     assert.equal((await cli('work','expectations','--repo',repository,'--params',JSON.stringify(expectations))).applied,false);
+    const decision={...work,eventId:'decision-request',expectedRevision:3,change:{action:'decision_request',decision:{id:'scope',question:'Accept scope?',context:'Local test only; no execution',options:['Accept','Reject']}}};
+    assert.equal((await cli('work','decision-request','--repo',repository,'--params',JSON.stringify(decision))).item.decisions[0].resolution.state,'pending');
+    const answer={...work,eventId:'decision-answer',expectedRevision:4,change:{action:'decision_answer',id:'scope',answer:'Accept',reason:'Explicit test answer, not human approval'}};
+    const answered=await rpc('tools/call',{name:'worklens_work',arguments:{operation:'work_decision_answer',repository:opened.path,params:answer}});
+    assert.equal(answered.result.isError,false);
+    assert.deepEqual((await cli('work','show','--repo',repository,'--params',JSON.stringify({id:work.id}))).item,JSON.parse(answered.result.content[0].text).item);
+    assert.equal((await cli('work','decision-answer','--repo',repository,'--params',JSON.stringify(answer))).applied,false);
+    const secondDecision={...decision,eventId:'decision-second',expectedRevision:5,change:{...decision.change,decision:{...decision.change.decision,id:'cancel-me'}}};
+    const secondResult=await rpc('tools/call',{name:'worklens_work',arguments:{operation:'work_decision_request',repository:opened.path,params:secondDecision}});
+    assert.equal(secondResult.result.isError,false);
+    const cancelled=await cli('work','decision-cancel','--repo',repository,'--params',JSON.stringify({...work,eventId:'decision-cancel',expectedRevision:6,change:{action:'decision_cancel',id:'cancel-me',reason:'Superseded test'}}));
+    assert.equal(cancelled.item.decisions[1].resolution.state,'cancelled');
     const invalidValidation=await rpc('tools/call',{name:'worklens_query',arguments:{operation:'validations',repository:opened.path,params:{slug:'owner/repo',sha:'bad'}}});
     assert.equal(invalidValidation.result.isError,true);
     assert.match(invalidValidation.result.content[0].text,/40-character/);
@@ -114,7 +126,9 @@ test('private service, CLI/MCP parity, version gate and persistent agent state',
     assert.equal((await cli('agents', '--repo', repository))[0].state, 'completed');
     const persisted = await cli('work','show','--repo',repository,'--params',JSON.stringify({id:work.id}));
     assert.equal(persisted.item.state,'todo');
-    assert.equal(persisted.item.revision,3);
+    assert.equal(persisted.item.revision,7);
+    assert.equal(persisted.item.decisions[0].resolution.answer,'Accept');
+    assert.equal(persisted.item.decisions[1].resolution.state,'cancelled');
     assert.equal(persisted.item.expectations[0].name,'test');
     console.log(`Service evidence retained at ${directory}`);
   } finally {

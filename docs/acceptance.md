@@ -52,7 +52,7 @@ The work-item lifecycle is implemented across desktop, CLI and MCP: create from 
 
 Validation for this increment: all six Nx check/lint/test targets passed without cache; 18 Rust tests, 12 Playwright scenarios and the real CLI/socket/MCP integration test passed. The native app created a real local Worklens delivery item; CLI reads returned that item, CLI added its PR/worktree/agent links, and native Reload displayed revision 4 with all three links and their history. The app and DMG were built and strict ad-hoc code-signature verification passed. No native performance claim is made.
 
-See [work-item semantics](work-items.md). Structured decisions and work-context export remain pending; locally declared validation expectations are implemented below.
+See [work-item semantics](work-items.md). Work-context export remains pending; locally declared validation expectations and structured decisions are implemented below.
 
 ### Functional increment: full PR impact
 
@@ -69,6 +69,14 @@ Local work-item expectations are compared with GitHub checks and commit statuses
 All six local Nx check/lint/test targets passed (the final run reused three unchanged frontend target outputs): 34 Rust tests, 17 Playwright scenarios, and the real CLI/socket/MCP integration test. One earlier integration run hit its service-startup timeout; the unchanged retry passed. Startup errors now retain bounded diagnostics, and another integration run passed. No timeout was increased.
 
 The macOS app and DMG were built and strict ad-hoc signature verification passed. Native validation collection remains **unverified**: after restarting the rebuilt app, the service was observed blocked inside macOS Keychain access (`SecKeychainFindGenericPassword`) and a SecurityAgent process was present. The user must handle the system authorization prompt; automated tests are not a substitute for this live gate. A local integrity-checked SQLite backup was made before upgrading the active database.
+
+### Functional increment: human–agent decisions
+
+Work items now expose requests with explicit scope/options, motivated answers and cancellations across desktop, CLI and MCP. Closed decisions cannot be overwritten. Revision conflicts, invalid inputs, retries and concurrent resolution are handled atomically; history and declared attribution are preserved. No automatic execution or authenticated-human-approval claim is made. Schema 4 reads older items with empty decisions and prevents older builds from dropping the new data. See [decision semantics](decisions.md).
+
+All six local Nx check/lint/test targets passed: 37 Rust tests, 19 Playwright scenarios and the real socket/CLI/MCP integration. Added tests cover schema-3 upgrade, repository isolation, duplicate IDs/events, terminal state protection, concurrent answer/cancellation, invalid options/reasons, restart persistence, explicit UI selection and retained drafts on conflict. The new UI reuses the existing shadcn Input/Button components and semantic form controls without new dependencies.
+
+The app and DMG were rebuilt; strict ad-hoc signature verification passed. Native acceptance is still pending; the prior Keychain authorization block is not considered resolved by a request to continue development. Local tests use isolated databases and do not require the user's GitHub token. The new app was not launched against the active user database for this increment.
 
 ### Remaining native acceptance
 

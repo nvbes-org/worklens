@@ -129,6 +129,9 @@ pub async fn dispatch(
         Operation::WorkUnlink => "unlink",
         Operation::WorkNote => "note",
         Operation::WorkExpectations => "expectations",
+        Operation::WorkDecisionRequest => "decision_request",
+        Operation::WorkDecisionAnswer => "decision_answer",
+        Operation::WorkDecisionCancel => "decision_cancel",
         _ => return Err(error("Invalid work operation")),
     };
     if p["change"]["action"] != expected {
@@ -138,6 +141,10 @@ pub async fn dispatch(
         return Ok(serde_json::to_value(replay)?);
     }
     match &mutation.change {
+        // Decision validation and state transitions are atomic with the work revision check.
+        WorkChange::DecisionRequest { .. }
+        | WorkChange::DecisionAnswer { .. }
+        | WorkChange::DecisionCancel { .. } => {}
         WorkChange::Expectations { expectations } => {
             if expectations.len() > 100 {
                 return Err(error("At most 100 validation expectations"));

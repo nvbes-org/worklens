@@ -11,7 +11,7 @@ use worklens_core::{Operation, PROTOCOL_VERSION, Request};
 struct Cli {
     #[arg(value_parser = ["serve", "mcp", "open", "recent", "trust", "status", "projects", "graph", "tasks", "impact", "pr-impact", "validations", "git", "diff", "documents", "document", "issues", "prs", "pr", "issue", "ci", "run", "logs", "context", "doctor", "agents", "agent", "search", "work"])]
     command: String,
-    /// Agent action, work action (list/show/create/update/link/unlink/note/expectations), or repository path for open.
+    /// Agent action, work action (including decision-request/decision-answer/decision-cancel), or path for open.
     argument: Option<String>,
     #[arg(long)]
     repo: Option<String>,
@@ -52,7 +52,7 @@ async fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         format!("agent_{action}")
     } else if cli.command == "work" {
         let action = cli.argument.as_deref().ok_or(
-            "work requires list, show, create, update, link, unlink, note or expectations",
+            "work requires list, show, create, update, link, unlink, note, expectations, decision-request, decision-answer or decision-cancel",
         )?;
         if ![
             "list",
@@ -63,12 +63,15 @@ async fn execute(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             "unlink",
             "note",
             "expectations",
+            "decision-request",
+            "decision-answer",
+            "decision-cancel",
         ]
         .contains(&action)
         {
             return Err("Invalid work action".into());
         }
-        format!("work_{action}")
+        format!("work_{}", action.replace('-', "_"))
     } else {
         cli.command.clone()
     };

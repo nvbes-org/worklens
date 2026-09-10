@@ -124,6 +124,7 @@ impl Store {
                 revision: 0,
                 links: links.clone(),
                 expectations: vec![],
+                decisions: vec![],
                 created_at: now.clone(),
                 updated_at: now.clone(),
             }
@@ -137,6 +138,11 @@ impl Store {
                 ));
             }
             match &mutation.change {
+                WorkChange::DecisionRequest { .. }
+                | WorkChange::DecisionAnswer { .. }
+                | WorkChange::DecisionCancel { .. } => {
+                    crate::work_decisions::apply(&mut item, mutation, &now)?
+                }
                 WorkChange::Expectations { expectations } => {
                     item.expectations = expectations.clone()
                 }

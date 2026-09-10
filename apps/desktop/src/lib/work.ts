@@ -26,6 +26,9 @@ export function useWorkChange() {
       unlink: 'work_unlink',
       note: 'work_note',
       expectations: 'work_expectations',
+      decision_request: 'work_decision_request',
+      decision_answer: 'work_decision_answer',
+      decision_cancel: 'work_decision_cancel',
     } as const;
     const signature = JSON.stringify([repo.id, item, change]);
     if (pending.current?.signature !== signature)

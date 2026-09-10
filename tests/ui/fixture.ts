@@ -20,15 +20,21 @@ export async function seed(page: Page) {
       switch(request.operation){
         case 'work_list':data={items:[...workItems.values()].filter(w=>(!request.params.reference||w.links.some(l=>l.reference===request.params.reference))&&(!request.params.state||w.state===request.params.state)),nextOffset:null};break;
         case 'work_show':data={item:workItems.get(String(request.params.id)),events:workEvents.get(String(request.params.id))??[],nextOffset:null};break;
-        case 'work_create':case 'work_update':case 'work_link':case 'work_unlink':case 'work_note':case 'work_expectations':{
+        case 'work_create':case 'work_update':case 'work_link':case 'work_unlink':case 'work_note':case 'work_expectations':case 'work_decision_request':case 'work_decision_answer':case 'work_decision_cancel':{
           const p=request.params as unknown as WorkMutation;
           const c=p.change;
           let item=workItems.get(p.id);
           if(item&&item.revision!==p.expectedRevision)return {version:1,data:null,error:'Revision conflict: reload the work item'};
-          if(c.action==='create')item={id:p.id,repositoryId:repo.id,title:c.title,objective:c.objective,criteria:c.criteria,state:'todo',revision:0,links:c.links,expectations:[],createdAt:source.collectedAt,updatedAt:source.collectedAt};
+          if(c.action==='create')item={id:p.id,repositoryId:repo.id,title:c.title,objective:c.objective,criteria:c.criteria,state:'todo',revision:0,links:c.links,expectations:[],decisions:[],createdAt:source.collectedAt,updatedAt:source.collectedAt};
           if(!item)return {version:1,data:null,error:'Work item not found'};
           if(c.action==='update')Object.assign(item,{title:c.title,objective:c.objective,criteria:c.criteria,state:c.state});
           if(c.action==='expectations')item.expectations=c.expectations;
+          if(c.action==='decision_request')item.decisions.push({request:c.decision,workRevision:item.revision,requestedBy:p.actor,requestedAt:source.collectedAt,resolution:{state:'pending'}});
+          if(c.action==='decision_answer'||c.action==='decision_cancel'){
+            const decision=item.decisions.find(d=>d.request.id===c.id);
+            if(!decision||decision.resolution.state!=='pending')return {version:1,data:null,error:'Decision not pending'};
+            decision.resolution=c.action==='decision_answer'?{state:'answered',answer:c.answer,reason:c.reason,actor:p.actor,at:source.collectedAt}:{state:'cancelled',reason:c.reason,actor:p.actor,at:source.collectedAt};
+          }
           if(c.action==='link')item.links=[...item.links.filter(l=>l.kind!==c.link.kind||l.reference!==c.link.reference),c.link];
           if(c.action==='unlink')item.links=item.links.filter(l=>l.kind!==c.kind||l.reference!==c.reference);
           item={...item,revision:item.revision+1};workItems.set(item.id,item);

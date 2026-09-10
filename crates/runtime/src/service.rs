@@ -189,7 +189,10 @@ impl Service {
             | Operation::WorkLink
             | Operation::WorkUnlink
             | Operation::WorkNote
-            | Operation::WorkExpectations => {
+            | Operation::WorkExpectations
+            | Operation::WorkDecisionRequest
+            | Operation::WorkDecisionAnswer
+            | Operation::WorkDecisionCancel => {
                 crate::service_work::dispatch(self, &repo, &request.operation, p).await
             }
             Operation::AgentStart

@@ -4,6 +4,7 @@ import { ErrorNotice } from '../components/common';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useWorkChange, workStates } from '../lib/work';
+import { WorkDecisions } from './work-decisions';
 import { WorkExpectations } from './work-expectations';
 import { WorkLinks } from './work-links';
 
@@ -14,6 +15,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [expectationDirty, setExpectationDirty] = useState(false);
+  const [decisionDirty, setDecisionDirty] = useState(false);
   async function apply(value: WorkChange) {
     setBusy(true);
     setError('');
@@ -47,7 +49,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
           });
         }}
       >
-        <fieldset disabled={expectationDirty} className="space-y-3">
+        <fieldset disabled={busy || expectationDirty || decisionDirty} className="space-y-3">
           <label className="block text-sm" htmlFor="work-title">
             Work title
             <Input id="work-title" name="title" defaultValue={item.title} required maxLength={200} />
@@ -81,7 +83,7 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
               ))}
             </select>
           </label>
-          <Button disabled={busy || expectationDirty}>Save changes</Button>
+          <Button disabled={busy || expectationDirty || decisionDirty}>Save changes</Button>
         </fieldset>
       </form>
       {dirty && (
@@ -97,10 +99,16 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
       <WorkExpectations
         item={item}
         apply={apply}
-        busy={busy || dirty}
+        busy={busy || dirty || decisionDirty}
         onDirty={() => setExpectationDirty(true)}
       />
-      <WorkLinks item={item} apply={apply} busy={busy || dirty || expectationDirty} />
+      <WorkDecisions
+        item={item}
+        apply={apply}
+        busy={busy || dirty || expectationDirty}
+        onDirty={() => setDecisionDirty(true)}
+      />
+      <WorkLinks item={item} apply={apply} busy={busy || dirty || expectationDirty || decisionDirty} />
       <section className="border-t pt-5">
         <h3 className="mb-3 font-medium">Local notes</h3>
         <form
@@ -113,12 +121,13 @@ export function WorkDetailView({ detail }: { detail: WorkDetail }) {
         >
           <Input
             name="note"
+            disabled={busy || dirty || expectationDirty || decisionDirty}
             aria-label="Local note"
             required
             maxLength={8192}
             placeholder="Not posted to GitHub"
           />
-          <Button disabled={busy || dirty || expectationDirty}>Add note</Button>
+          <Button disabled={busy || dirty || expectationDirty || decisionDirty}>Add note</Button>
         </form>
       </section>
       <section className="border-t pt-5">

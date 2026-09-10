@@ -318,9 +318,9 @@ fn migration_preserves_existing_settings_and_refuses_future_versions() {
         connection
             .query_row("PRAGMA user_version", [], |r| r.get::<_, u32>(0))
             .unwrap(),
-        3
+        4
     );
-    connection.execute_batch("PRAGMA user_version=4").unwrap();
+    connection.execute_batch("PRAGMA user_version=5").unwrap();
     assert!(Store::open(&path).is_err());
 }
 

@@ -47,6 +47,9 @@ pub enum Operation {
     WorkUnlink,
     WorkNote,
     WorkExpectations,
+    WorkDecisionRequest,
+    WorkDecisionAnswer,
+    WorkDecisionCancel,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

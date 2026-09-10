@@ -29,6 +29,8 @@ jobs:
       - name: Build local macOS app
         run: pnpm exec tauri build --bundles app
         working-directory: apps/desktop
+      - name: Verify local ad-hoc bundle integrity
+        run: codesign --verify --deep --strict target/release/bundle/macos/Worklens.app
       - uses: actions/upload-artifact@v4
         with:
           name: worklens-macos-local-alpha

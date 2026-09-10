@@ -15,7 +15,7 @@ Outputs:
 - `target/release/bundle/dmg/Worklens_0.1.0-alpha.1_aarch64.dmg`
 - `target/release/worklens` (CLI and MCP)
 
-Open the locally built app, or mount the DMG and copy the app into Applications. Put the matching CLI binary in a directory on your PATH. Developer ID signing, Apple notarization, public distribution and automatic updates are not provided in this alpha. Gatekeeper may block downloaded builds; prefer building locally rather than disabling system protections.
+Open the locally built app, or mount the DMG and copy the app into Applications. Put the matching CLI binary in a directory on your PATH. The bundle uses local ad-hoc signing to seal resources, not an Apple Developer ID. Developer ID signing, Apple notarization, public distribution and automatic updates are not provided in this alpha. Gatekeeper may block downloaded builds; prefer building locally rather than disabling system protections.
 
 No API server, container, subscription or LLM provider is necessary. GitHub features require the optional [GitHub App setup](github.md).
 

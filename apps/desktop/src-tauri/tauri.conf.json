@@ -13,5 +13,5 @@
     "windows": [{ "title": "Worklens", "width": 1440, "height": 960, "minWidth": 1000, "minHeight": 700 }],
     "security": { "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:" }
   },
-  "bundle": { "active": true, "targets": ["app", "dmg"], "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns"], "resources": {"../../../LICENSE": "LICENSE", "../../../NOTICE": "NOTICE"} }
+  "bundle": { "active": true, "targets": ["app", "dmg"], "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns"], "macOS": {"signingIdentity": "-"}, "resources": {"../../../LICENSE": "LICENSE", "../../../NOTICE": "NOTICE"} }
 }

@@ -22,6 +22,10 @@ export type Graph = { nodes: Array<Project>, edges: Array<Edge>, sources: Array<
  */
 components: Array<ComponentGroup>, };
 export type ComponentGroup = { id: string, memberIds: Array<string>, };
+export type ComponentMetadata = { memberIds: Array<string>, collectedAt: string, firstCommitAt: string | null, modifiedAt: string | null, lastCommit: ComponentCommit | null, sizeBytes: number | null, fileCount: number | null, sizeScope: string, dirty: boolean | null, integrity: Array<IntegrityRecord>, nx: NxAffected, warnings: Array<string>, };
+export type ComponentCommit = { sha: string, date: string, author: string, subject: string, };
+export type IntegrityRecord = { algorithm: string, value: string, source: string, scope: string, };
+export type NxAffected = { affected: boolean | null, base: string, head: string, reason: string, };
 export type Impact = { direct: Array<string>, dependants: Array<string>, warning: string, };
 export type PrRevision = { baseRepository: string, headRepository: string | null, baseSha: string, headSha: string, expectedFiles: number, };
 export type PrChangedFile = { path: string, previousPath: string | null, status: string, };
@@ -38,7 +42,7 @@ export type ValidationAssessment = { expectation: ValidationExpectation, outcome
 export type ValidationReport = { repository: string, sha: string, workRevision: number | null, observations: Array<ValidationObservation>, assessments: Array<ValidationAssessment>, sources: Array<Provenance>, summary: string, warnings: Array<string>, };
 export type AgentState = "active" | "waiting" | "blocked" | "completed" | "failed";
 export type AgentSession = { id: string, repositoryId: string, worktree: string, tool: string, objective: string, state: AgentState, message: string, lastSeen: string, presence: string, issue: string | null, pr: string | null, };
-export type Operation = "open" | "recent" | "trust" | "status" | "git" | "diff" | "projects" | "graph" | "tasks" | "impact" | "pr_impact" | "validations" | "documents" | "document" | "context" | "doctor" | "agents" | "agent_start" | "agent_update" | "agent_heartbeat" | "agent_finish" | "github_auth_start" | "github_auth_poll" | "github_auth_status" | "github_logout" | "issues" | "prs" | "pr" | "issue" | "ci" | "run" | "logs" | "search" | "work_list" | "work_show" | "work_context" | "work_context_page" | "work_create" | "work_update" | "work_link" | "work_unlink" | "work_note" | "work_expectations" | "work_decision_request" | "work_decision_answer" | "work_decision_cancel";
+export type Operation = "open" | "recent" | "trust" | "status" | "git" | "diff" | "projects" | "graph" | "component_metadata" | "tasks" | "impact" | "pr_impact" | "validations" | "documents" | "document" | "context" | "doctor" | "agents" | "agent_start" | "agent_update" | "agent_heartbeat" | "agent_finish" | "github_auth_start" | "github_auth_poll" | "github_auth_status" | "github_logout" | "issues" | "prs" | "pr" | "issue" | "ci" | "run" | "logs" | "search" | "work_list" | "work_show" | "work_context" | "work_context_page" | "work_create" | "work_update" | "work_link" | "work_unlink" | "work_note" | "work_expectations" | "work_decision_request" | "work_decision_answer" | "work_decision_cancel";
 export type WorkState = "todo" | "in_progress" | "waiting" | "blocked" | "completed" | "abandoned";
 export type WorkLinkKind = "pr" | "issue" | "worktree" | "agent" | "component";
 export type WorkLinkStatus = "candidate" | "confirmed" | "rejected";

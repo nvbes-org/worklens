@@ -157,6 +157,7 @@ impl Service {
                 }
                 Ok(serde_json::to_value(graph)?)
             }
+            Operation::ComponentMetadata => crate::component_metadata::query(self, &repo, p).await,
             Operation::Tasks => {
                 if !repo.trusted {
                     return Err(error("Trust this repository before executing Nx"));

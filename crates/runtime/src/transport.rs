@@ -141,7 +141,7 @@ mod tests {
         let socket = dir.path().join("service.sock");
         for stale in [false, true] {
             if stale {
-                drop(UnixListener::bind(&socket).unwrap());
+                drop(std::os::unix::net::UnixListener::bind(&socket).unwrap());
             }
             let mut listener = None;
             let stream = connect_or_start(&socket, async {
@@ -169,7 +169,7 @@ mod tests {
             .await
             .unwrap();
         drop(stream);
-        drop(listener);
+        drop(listener.into_std().unwrap());
         let result = connect_or_start(&socket, async { Err(error("startup failed")) }).await;
         assert!(result.unwrap_err().to_string().contains("startup failed"));
     }

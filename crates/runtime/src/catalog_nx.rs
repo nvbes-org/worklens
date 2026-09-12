@@ -90,7 +90,7 @@ pub async fn tasks(root: &Path, project: &str, target: &str) -> Result<Value> {
     Ok(serde_json::from_slice(&output)?)
 }
 
-fn executable(root: &Path) -> Result<String> {
+pub(crate) fn executable(root: &Path) -> Result<String> {
     let package = root
         .join("node_modules/nx")
         .canonicalize()

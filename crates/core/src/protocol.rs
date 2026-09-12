@@ -14,6 +14,7 @@ pub enum Operation {
     Diff,
     Projects,
     Graph,
+    ComponentMetadata,
     Tasks,
     Impact,
     PrImpact,

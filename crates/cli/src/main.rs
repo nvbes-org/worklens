@@ -9,7 +9,7 @@ use worklens_core::{Operation, PROTOCOL_VERSION, Request};
     about = "Local repository and agent observability. All queries use the shared Worklens service."
 )]
 struct Cli {
-    #[arg(value_parser = ["serve", "mcp", "open", "recent", "trust", "status", "projects", "graph", "tasks", "impact", "pr-impact", "validations", "git", "diff", "documents", "document", "issues", "prs", "pr", "issue", "ci", "run", "logs", "context", "doctor", "agents", "agent", "search", "work"])]
+    #[arg(value_parser = ["serve", "mcp", "open", "recent", "trust", "status", "projects", "graph", "component_metadata", "tasks", "impact", "pr-impact", "validations", "git", "diff", "documents", "document", "issues", "prs", "pr", "issue", "ci", "run", "logs", "context", "doctor", "agents", "agent", "search", "work"])]
     command: String,
     /// Agent/work action (including context/context-page and decision-*), or path for open.
     argument: Option<String>,

@@ -6,6 +6,7 @@ import { openSource, query } from '../lib/api';
 import { type ComponentProject, ecosystems } from '../lib/component-graph';
 import { useData, useSession } from '../lib/session';
 import { ErrorNotice } from './common';
+import { ComponentMetadata } from './component-metadata';
 import { TaskGraph } from './task-graph';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -78,6 +79,7 @@ function InspectorDetails({
             <Badge variant="outline">{selected.kind}</Badge>
           </div>
           <ErrorNotice error={error} />
+          <ComponentMetadata key={selected.id} project={selected} />
           {selected.features.length > 0 && (
             <p className="mt-4 text-xs text-muted-foreground">Features: {selected.features.join(', ')}</p>
           )}

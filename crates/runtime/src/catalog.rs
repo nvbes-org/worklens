@@ -117,12 +117,13 @@ pub async fn files(root: &Path) -> Result<Vec<String>> {
 }
 
 pub async fn passive(root: &Path) -> Result<Graph> {
+    let workspace = crate::catalog_workspace::Workspace::load(root)?;
     let mut graph = Graph {
         components: vec![],
         nodes: vec![],
         edges: vec![],
         sources: vec![Provenance::observed(
-            "tracked and unignored manifests (declared dependencies)",
+            "workspace-scoped JavaScript manifests (declared dependencies)",
         )],
     };
     let mut declarations = Vec::new();
@@ -131,6 +132,13 @@ pub async fn passive(root: &Path) -> Result<Graph> {
         .into_iter()
         .filter(|p| p == "package.json" || p.ends_with("/package.json"))
     {
+        let directory = Path::new(&file).parent().unwrap_or(Path::new(""));
+        if workspace
+            .as_ref()
+            .is_some_and(|scope| !scope.contains(&directory.to_string_lossy()))
+        {
+            continue;
+        }
         let Ok(path) = paths::confined(root, &file) else {
             continue;
         };
@@ -158,7 +166,12 @@ pub async fn passive(root: &Path) -> Result<Graph> {
             name: name.into(),
             root: relative,
             kind: "package".into(),
-            ecosystem: "pnpm".into(),
+            ecosystem: if workspace.is_some() {
+                "pnpm"
+            } else {
+                "javascript"
+            }
+            .into(),
             manifest: file.clone(),
             external: false,
             targets,

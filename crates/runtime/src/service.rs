@@ -69,6 +69,7 @@ impl Service {
         let key = format!("graph:{}", repo.path);
         if !refresh && let Some(value) = self.db()?.cache(&key)? {
             let mut graph: Graph = serde_json::from_value(value)?;
+            crate::catalog_workspace::filter_cached(Path::new(&repo.path), &mut graph)?;
             graph.components = worklens_core::graph_components::detect(&graph);
             for source in &mut graph.sources {
                 if source.status == Availability::Available {

@@ -56,6 +56,9 @@ function InspectorDetails({
             </Button>
           </div>
           <h2 className="text-lg font-semibold tracking-tight">{selected.name}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {selected.external ? 'External dependency / vendor' : 'Workspace package'}
+          </p>
           {selected.members.map((member) => (
             <div key={member.id} className="mt-2">
               {selected.members.length > 1 && (

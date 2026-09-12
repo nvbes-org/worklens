@@ -7,24 +7,26 @@ import ELK from 'elkjs/lib/elk-api.js';
 import { List, Network, RefreshCw } from 'lucide-react';
 import { Empty, ErrorNotice, Loading, Source } from '../components/common';
 import { ComponentInspector } from '../components/component-inspector';
+import { ComponentLegend } from '../components/component-legend';
 import { NxTrustNotice } from '../components/nx-trust-notice';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ViewHeading } from '../components/view-heading';
 import { query } from '../lib/api';
-import { componentCategories, componentCategory } from '../lib/component-category';
+import { componentCategory } from '../lib/component-category';
 import { componentGraph, ecosystems } from '../lib/component-graph';
 import { useGraph, useSession } from '../lib/session';
 
 export function ArchitecturePage() {
   const { repo } = useSession();
-  const graph = useGraph();
+  const [includeVendors, setIncludeVendors] = useState(false);
+  const graph = useGraph(includeVendors);
   const merged = useMemo(() => componentGraph(graph.data), [graph.data]);
   const client = useQueryClient();
   const [filter, setFilter] = useState('');
   const [ecosystem, setEcosystem] = useState('all');
-  const [external, setExternal] = useState(false);
+  const [scope, setScope] = useState('packages');
   const [mode, setMode] = useState('graph');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [layout, setLayout] = useState<Node[]>([]);
@@ -35,14 +37,14 @@ export function ArchitecturePage() {
     () =>
       merged.nodes.filter(
         (node) =>
-          (external || !node.external) &&
+          (scope === 'all' || (scope === 'dependencies' ? node.external : !node.external)) &&
           (ecosystem === 'all' || ecosystems(node).includes(ecosystem)) &&
           (!filter ||
             node.members.some((member) =>
               `${member.name} ${member.root}`.toLowerCase().includes(filter.toLowerCase()),
             )),
       ),
-    [merged, external, ecosystem, filter],
+    [merged, scope, ecosystem, filter],
   );
   const visible = useMemo(() => nodes.slice(0, 300), [nodes]);
   const edges = useMemo(() => {
@@ -85,7 +87,9 @@ export function ArchitecturePage() {
                 label: (
                   <div className="graph-node-label">
                     <span>{project?.name}</span>
-                    <small>{project?.root || 'External package'}</small>
+                    <small>
+                      {project?.external ? 'External dependency' : project?.root || 'Workspace root'}
+                    </small>
                     <em>{project ? ecosystems(project).join(' · ') : ''}</em>
                   </div>
                 ),
@@ -118,8 +122,8 @@ export function ArchitecturePage() {
     setBusy(true);
     setError('');
     try {
-      const data = await query<Graph>('graph', repo?.path, { refresh: true });
-      client.setQueryData(['graph', repo?.path, {}], data);
+      const data = await query<Graph>('graph', repo?.path, { refresh: true, includeVendors });
+      client.setQueryData(['graph', repo?.path, includeVendors ? { includeVendors: true } : {}], data);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -182,9 +186,26 @@ export function ArchitecturePage() {
             </option>
           ))}
         </select>
+        <select
+          aria-label="Package scope"
+          className="h-8 rounded-md border bg-white px-2 text-xs"
+          value={scope}
+          onChange={(e) => setScope(e.target.value)}
+        >
+          <option value="packages">Workspace packages</option>
+          <option value="all">Packages + dependencies</option>
+          <option value="dependencies">Dependencies / vendors</option>
+        </select>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <input type="checkbox" checked={external} onChange={(e) => setExternal(e.target.checked)} />
-          External
+          <input
+            type="checkbox"
+            checked={includeVendors}
+            onChange={(e) => {
+              setIncludeVendors(e.target.checked);
+              if (e.target.checked) setScope('all');
+            }}
+          />
+          Parse vendor folders
         </label>
         <span className="ml-auto whitespace-nowrap text-[11px] text-muted-foreground">
           {nodes.length} modules · {edges.length} links
@@ -223,7 +244,7 @@ export function ArchitecturePage() {
               deleteKeyCode={null}
               minZoom={0.05}
               maxZoom={1.8}
-              key={`${filter}:${ecosystem}:${external}:${layout.map((node) => node.id).join(',')}`}
+              key={`${filter}:${ecosystem}:${scope}:${layout.map((node) => node.id).join(',')}`}
               onNodeClick={(_, node) => setSelectedId(node.id)}
               onPaneClick={() => setSelectedId(null)}
               onKeyDown={(event) => {
@@ -266,15 +287,7 @@ export function ArchitecturePage() {
         </div>
         {selected && <ComponentInspector selected={selected} graph={merged} onSelect={setSelectedId} />}
       </div>
-      <fieldset className="architecture-legend" aria-label="Component categories">
-        {Object.entries(componentCategories).map(([category, label]) => (
-          <span key={category}>
-            <i className={`component-${category}`} />
-            {label}
-          </span>
-        ))}
-        <span className="ml-auto">Module → dependency</span>
-      </fieldset>
+      <ComponentLegend />
       <details className="architecture-sources">
         <summary>Collection sources</summary>
         {graph.data?.sources.map((source, i) => (

@@ -148,10 +148,15 @@ impl Service {
                 )
                 .await?,
             )?),
-            Operation::Projects | Operation::Graph => Ok(serde_json::to_value(
-                self.graph(&repo, p["refresh"].as_bool().unwrap_or(false))
-                    .await?,
-            )?),
+            Operation::Projects | Operation::Graph => {
+                let mut graph = self
+                    .graph(&repo, p["refresh"].as_bool().unwrap_or(false))
+                    .await?;
+                if p["includeVendors"].as_bool().unwrap_or(false) {
+                    crate::catalog_vendors::extend(root, &mut graph)?;
+                }
+                Ok(serde_json::to_value(graph)?)
+            }
             Operation::Tasks => {
                 if !repo.trusted {
                     return Err(error("Trust this repository before executing Nx"));

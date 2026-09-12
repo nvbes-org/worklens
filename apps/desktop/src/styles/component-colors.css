@@ -23,6 +23,19 @@
   --component-color: #71717a;
   --component-border: #d4d4d8;
 }
+.component-package {
+  --component-bg: #ecfeff;
+  --component-color: #0e7490;
+  --component-border: #a5f3fc;
+}
+.component-dependency {
+  --component-bg: #fff1f2;
+  --component-color: #be123c;
+  --component-border: #fda4af;
+}
+.architecture-canvas .react-flow__node-default.component-dependency {
+  border-style: dashed;
+}
 .architecture-canvas .react-flow__node-default {
   background: var(--component-bg, white);
   border-color: var(--component-border, #e4e4e7);

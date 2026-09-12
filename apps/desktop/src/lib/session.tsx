@@ -46,6 +46,6 @@ export function useData<T>(operation: Operation, params: JsonValue = {}, interva
 export function useGit() {
   return useData<GitSnapshot>('git', {}, 15_000);
 }
-export function useGraph() {
-  return useData<Graph>('graph');
+export function useGraph(includeVendors = false) {
+  return useData<Graph>('graph', includeVendors ? { includeVendors: true } : {});
 }

@@ -1,6 +1,7 @@
 pub mod catalog;
 pub mod catalog_cargo;
 pub mod catalog_nx;
+pub mod catalog_vendors;
 mod catalog_workspace;
 pub mod command;
 mod context_snapshot;

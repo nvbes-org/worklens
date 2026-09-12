@@ -83,9 +83,13 @@ pub fn filter_cached(root: &Path, graph: &mut Graph) -> Result<()> {
     let workspace = Workspace::load(root)?;
     graph.nodes.retain(|node| {
         !node.id.starts_with("package:")
-            || workspace
-                .as_ref()
-                .is_none_or(|scope| scope.contains(&node.root))
+            || (!node
+                .root
+                .split('/')
+                .any(|part| matches!(part, "vendor" | "vendors"))
+                && workspace
+                    .as_ref()
+                    .is_none_or(|scope| scope.contains(&node.root)))
     });
     let ids: BTreeSet<_> = graph.nodes.iter().map(|node| node.id.as_str()).collect();
     graph

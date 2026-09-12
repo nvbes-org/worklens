@@ -133,6 +133,12 @@ pub async fn passive(root: &Path) -> Result<Graph> {
         .filter(|p| p == "package.json" || p.ends_with("/package.json"))
     {
         let directory = Path::new(&file).parent().unwrap_or(Path::new(""));
+        if directory
+            .components()
+            .any(|part| matches!(part.as_os_str().to_str(), Some("vendor" | "vendors")))
+        {
+            continue;
+        }
         if workspace
             .as_ref()
             .is_some_and(|scope| !scope.contains(&directory.to_string_lossy()))

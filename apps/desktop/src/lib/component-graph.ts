@@ -11,7 +11,21 @@ export function componentGraph(graph?: Graph) {
   const originals = new Map((graph?.nodes ?? []).map((node) => [node.id, node]));
   const aliases = new Map<string, string>();
   const nodes: ComponentProject[] = [];
-  for (const group of graph?.components ?? []) {
+  // Older running backends and cached responses may not expose engine groups yet.
+  const groups = [...(graph?.components ?? [])];
+  const grouped = new Set(groups.flatMap((group) => group.memberIds));
+  const directories = new Map<string, string[]>();
+  for (const node of originals.values()) {
+    if (node.external || grouped.has(node.id) || node.root.startsWith('/')) continue;
+    const parts = node.root.split('/').filter((part) => part && part !== '.');
+    if (parts.includes('..')) continue;
+    const root = parts.join('/');
+    directories.set(root, [...(directories.get(root) ?? []), node.id]);
+  }
+  for (const [root, memberIds] of directories) {
+    if (memberIds.length > 1) groups.push({ id: `component:directory:${root}`, memberIds });
+  }
+  for (const group of groups) {
     const members = group.memberIds
       .map((id) => originals.get(id))
       .filter((node): node is Project => Boolean(node));

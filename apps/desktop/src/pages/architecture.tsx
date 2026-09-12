@@ -13,6 +13,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ViewHeading } from '../components/view-heading';
 import { query } from '../lib/api';
+import { componentCategories, componentCategory } from '../lib/component-category';
 import { componentGraph, ecosystems } from '../lib/component-graph';
 import { useGraph, useSession } from '../lib/session';
 
@@ -75,6 +76,7 @@ export function ArchitecturePage() {
             const project = visible.find((item) => item.id === node.id);
             return {
               id: node.id,
+              className: `component-${project ? componentCategory(project) : 'module'}`,
               ariaLabel: `${project?.name ?? node.id} module`,
               ariaRole: 'button',
               focusable: true,
@@ -125,7 +127,7 @@ export function ArchitecturePage() {
     }
   }
   return (
-    <>
+    <section className="architecture-page">
       <ViewHeading
         section="Architecture"
         title="Understand your monorepo"
@@ -198,7 +200,7 @@ export function ArchitecturePage() {
           {relation}
         </p>
       )}
-      <div className="architecture-workspace">
+      <div className="architecture-workspace" data-inspecting={Boolean(selected)}>
         <div className="architecture-canvas">
           {graph.isPending ? (
             <div className="p-5">
@@ -219,10 +221,11 @@ export function ArchitecturePage() {
               nodesConnectable={false}
               nodesDraggable={false}
               deleteKeyCode={null}
-              minZoom={0.3}
+              minZoom={0.05}
               maxZoom={1.8}
               key={`${filter}:${ecosystem}:${external}:${layout.map((node) => node.id).join(',')}`}
               onNodeClick={(_, node) => setSelectedId(node.id)}
+              onPaneClick={() => setSelectedId(null)}
               onKeyDown={(event) => {
                 if (!(event.target instanceof Element)) return;
                 const id = event.target.closest<HTMLElement>('.react-flow__node')?.dataset.id;
@@ -261,17 +264,23 @@ export function ArchitecturePage() {
             </div>
           )}
         </div>
-        <ComponentInspector selected={selected} graph={merged} onSelect={setSelectedId} />
+        {selected && <ComponentInspector selected={selected} graph={merged} onSelect={setSelectedId} />}
       </div>
-      <div className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">
-        <span className="inline-block h-px w-5 bg-zinc-400" />
-        Module → dependency · Click a module to inspect it
-      </div>
-      <footer className="mt-5 space-y-2">
+      <fieldset className="architecture-legend" aria-label="Component categories">
+        {Object.entries(componentCategories).map(([category, label]) => (
+          <span key={category}>
+            <i className={`component-${category}`} />
+            {label}
+          </span>
+        ))}
+        <span className="ml-auto">Module → dependency</span>
+      </fieldset>
+      <details className="architecture-sources">
+        <summary>Collection sources</summary>
         {graph.data?.sources.map((source, i) => (
           <Source key={`${source.source}:${i}`} source={source} />
         ))}
-      </footer>
-    </>
+      </details>
+    </section>
   );
 }

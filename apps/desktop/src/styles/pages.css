@@ -1,9 +1,29 @@
+.workspace-content:has(.architecture-page) {
+  max-width: none;
+  height: 100%;
+  padding: 64px 24px 88px;
+}
+.architecture-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 480px;
+}
+.architecture-page > * {
+  flex-shrink: 0;
+}
+.architecture-page .view-heading {
+  margin-bottom: 16px;
+}
+.architecture-page .view-heading h1 {
+  font-size: 24px;
+}
 .architecture-controls {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .view-segment {
   display: flex;
@@ -14,19 +34,25 @@
 }
 .architecture-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
-  min-height: 486px;
+  min-height: 200px;
+  flex: 1;
+}
+.architecture-workspace[data-inspecting="true"] {
+  grid-template-columns: minmax(0, 1fr) 280px;
 }
 .architecture-canvas {
   min-width: 0;
-  height: clamp(320px, calc(100dvh - 410px), 486px);
+  height: 100%;
   overflow: auto;
   border: 1px solid #e4e4e7;
   border-radius: 12px;
   background: #fafafc;
 }
 .component-inspector {
+  overflow: auto;
+  min-height: 0;
   min-width: 0;
   border-left: 1px solid #e4e4e7;
   padding: 4px 0 0 24px;
@@ -415,7 +441,7 @@
   padding-bottom: 7px;
 }
 @media (max-width: 1200px) {
-  .architecture-workspace {
+  .architecture-workspace[data-inspecting="true"] {
     grid-template-columns: minmax(0, 1fr) 220px;
     gap: 20px;
   }
@@ -434,8 +460,8 @@
   }
 }
 @media (max-width: 900px) {
-  .architecture-workspace {
-    grid-template-columns: 1fr;
+  .architecture-workspace[data-inspecting="true"] {
+    grid-template-columns: minmax(0, 1fr) 220px;
   }
   .component-inspector {
     border-left: 0;

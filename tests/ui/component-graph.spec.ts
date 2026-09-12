@@ -32,10 +32,8 @@ test('cross-tool modules merge while filters, evidence and Nx targets retain the
           { ...web, id: 'pnpm:web', name: '@fixture/web', ecosystem: 'pnpm', targets: [] },
           { ...core, id: 'nx:core', ecosystem: 'nx', manifest: 'libs/core/project.json', targets: ['test'] },
         );
-        graph.components = [
-          { id: 'component:web', memberIds: ['nx:web', 'cargo:web', 'pnpm:web'] },
-          { id: 'component:core', memberIds: ['cargo:core', 'nx:core'] },
-        ];
+        // Exercise legacy backend responses without engine grouping metadata.
+        Reflect.deleteProperty(graph, 'components');
         graph.edges.push(
           {
             source: 'cargo:web',
@@ -61,6 +59,9 @@ test('cross-tool modules merge while filters, evidence and Nx targets retain the
   await page.getByRole('button', { name: 'Refresh graph', exact: true }).click();
   await expect(page.getByText('2 modules · 1 links', { exact: true })).toBeVisible();
   await expect(page.locator('.react-flow__node')).toHaveCount(2);
+  await expect(page.getByRole('complementary', { name: 'Component inspector' })).toHaveCount(0);
+  await expect(page.locator('.react-flow__node.component-service')).toHaveCount(1);
+  await expect(page.locator('.react-flow__node.component-lib')).toHaveCount(1);
   await expect(page.locator('.react-flow__edge')).toHaveCount(1);
   await expect(page.getByText('same component', { exact: true })).toHaveCount(0);
   await page.locator('.react-flow__edge').click({ force: true });

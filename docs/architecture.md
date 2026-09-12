@@ -42,6 +42,8 @@ Documents are confined through canonical paths, including symlink checks. Markdo
 
 The per-user socket is not a security boundary against other processes running as that same user. Do not grant repository trust to code you would not execute manually. The alpha has no hosted component, telemetry, account service, update checker, remote cache administration, or LLM provider dependency.
 
+The local service outlives its desktop client. Restarting or hot-reloading the desktop does not replace an already-running service: `transport::ensure` reuses its socket. After engine changes, rebuild the binary, identify and stop the old Worklens `serve` process, and let the updated client start the service before refreshing the graph. Do not delete the database or reset repository trust. `doctor.engine` reports the actual service PID, executable and package version to distinguish an old bundled service from the current development client.
+
 ## Sources
 
 - [Tauri process model](https://v2.tauri.app/concept/process-model/)

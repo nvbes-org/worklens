@@ -273,7 +273,9 @@ impl Service {
             });
         }
         Ok(
-            json!({ "tools": tools, "protocol": PROTOCOL_VERSION, "dataDirectory": crate::paths::data_dir()?, "github": crate::github_auth::status() }),
+            json!({ "tools": tools, "protocol": PROTOCOL_VERSION, "dataDirectory": crate::paths::data_dir()?, "github": crate::github_auth::status(),
+                "engine": { "pid": std::process::id(), "executable": std::env::current_exe()?, "version": env!("CARGO_PKG_VERSION") }
+            }),
         )
     }
 }

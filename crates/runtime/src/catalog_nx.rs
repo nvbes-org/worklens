@@ -30,6 +30,7 @@ pub fn parse(json: &Value) -> Result<Graph> {
         .as_object()
         .ok_or_else(|| error("Nx output missing graph.nodes"))?;
     let mut graph = Graph {
+        components: vec![],
         nodes: vec![],
         edges: vec![],
         sources: vec![Provenance::observed("local Nx graph --print")],

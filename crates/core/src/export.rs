@@ -22,6 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Project::decl(&cfg),
         Edge::decl(&cfg),
         Graph::decl(&cfg),
+        ComponentGroup::decl(&cfg),
         Impact::decl(&cfg),
         PrRevision::decl(&cfg),
         PrChangedFile::decl(&cfg),

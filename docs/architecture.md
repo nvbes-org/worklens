@@ -22,7 +22,9 @@ One service instance per data directory, protected by a file lock. The desktop a
 
 ## Semantics
 
-Repository identity derives from the canonical common Git directory; worktree identity includes its canonical path. Repository relocation can therefore change local identity. Package IDs retain Cargo resolution IDs or manifest paths. Nx IDs are namespaced independently. Matching manifest paths create an explicit identity relation rather than merging package and project dependency edges.
+Repository identity derives from the canonical common Git directory; worktree identity includes its canonical path. Repository relocation can therefore change local identity. Package IDs retain Cargo resolution IDs or manifest paths. Nx IDs are namespaced independently. Matching manifest paths create an explicit identity relation in the raw graph.
+
+The engine also detects component groups across Cargo, Nx and JavaScript declarations sharing the same normalized repository-relative directory. Names alone never merge projects; nested directories and external packages remain separate. Architecture displays each group as one module, redirects and deduplicates its connections, and removes internal identity links. The inspector retains every original manifest, ecosystem and target; Nx task queries use the original Nx identity. Raw graph nodes and evidence remain intact for impact and context queries. Groups are recomputed when reading older cached graphs as well as during collection.
 
 Every collected graph has source timestamps and availability. Relations preserve observed / declared / candidate evidence and their origin. Cached graph data is marked stale until refreshed. GitHub failures can return the last SQLite snapshot with a stale status and failure explanation; they cannot become a fresh success. CI is queried using the PR head SHA, not the latest branch result. Local impact uses the selected worktree's current graph, not a reconstruction of the PR's historical graph.
 

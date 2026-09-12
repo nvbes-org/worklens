@@ -13,11 +13,13 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ViewHeading } from '../components/view-heading';
 import { query } from '../lib/api';
+import { componentGraph, ecosystems } from '../lib/component-graph';
 import { useGraph, useSession } from '../lib/session';
 
 export function ArchitecturePage() {
   const { repo } = useSession();
   const graph = useGraph();
+  const merged = useMemo(() => componentGraph(graph.data), [graph.data]);
   const client = useQueryClient();
   const [filter, setFilter] = useState('');
   const [ecosystem, setEcosystem] = useState('all');
@@ -30,20 +32,23 @@ export function ArchitecturePage() {
   const [busy, setBusy] = useState(false);
   const nodes = useMemo(
     () =>
-      (graph.data?.nodes ?? []).filter(
+      merged.nodes.filter(
         (node) =>
           (external || !node.external) &&
-          (ecosystem === 'all' || node.ecosystem === ecosystem) &&
-          (!filter || `${node.name} ${node.root}`.toLowerCase().includes(filter.toLowerCase())),
+          (ecosystem === 'all' || ecosystems(node).includes(ecosystem)) &&
+          (!filter ||
+            node.members.some((member) =>
+              `${member.name} ${member.root}`.toLowerCase().includes(filter.toLowerCase()),
+            )),
       ),
-    [graph.data, external, ecosystem, filter],
+    [merged, external, ecosystem, filter],
   );
   const visible = useMemo(() => nodes.slice(0, 300), [nodes]);
   const edges = useMemo(() => {
     const ids = new Set(visible.map((node) => node.id));
-    return (graph.data?.edges ?? []).filter((edge) => ids.has(edge.source) && ids.has(edge.target));
-  }, [graph.data, visible]);
-  const selected = graph.data?.nodes.find((node) => node.id === selectedId) ?? null;
+    return merged.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
+  }, [merged, visible]);
+  const selected = merged.nodes.find((node) => node.id === selectedId) ?? null;
 
   useEffect(() => {
     let active = true;
@@ -79,7 +84,7 @@ export function ArchitecturePage() {
                   <div className="graph-node-label">
                     <span>{project?.name}</span>
                     <small>{project?.root || 'External package'}</small>
-                    <em>{project?.ecosystem}</em>
+                    <em>{project ? ecosystems(project).join(' · ') : ''}</em>
                   </div>
                 ),
               },
@@ -189,7 +194,7 @@ export function ArchitecturePage() {
         </p>
       )}
       {relation && (
-        <p role="status" className="mb-3 rounded-md border p-3 text-xs">
+        <p role="status" className="mb-3 whitespace-pre-line rounded-md border p-3 text-xs">
           {relation}
         </p>
       )}
@@ -229,8 +234,7 @@ export function ArchitecturePage() {
               }}
               onEdgeClick={(_, edge) => {
                 const selectedEdge = edges[Number(edge.id)];
-                if (selectedEdge)
-                  setRelation(`${selectedEdge.kind} · ${selectedEdge.evidence} · ${selectedEdge.origin}`);
+                if (selectedEdge) setRelation(selectedEdge.origin);
               }}
             >
               <Background color="#dedee5" gap={20} size={1} />
@@ -251,13 +255,13 @@ export function ArchitecturePage() {
                       {node.root}
                     </span>
                   </span>
-                  <Badge variant="outline">{node.ecosystem}</Badge>
+                  <Badge variant="outline">{ecosystems(node).join(' · ')}</Badge>
                 </button>
               ))}
             </div>
           )}
         </div>
-        <ComponentInspector selected={selected} graph={graph.data} onSelect={setSelectedId} />
+        <ComponentInspector selected={selected} graph={merged} onSelect={setSelectedId} />
       </div>
       <div className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">
         <span className="inline-block h-px w-5 bg-zinc-400" />

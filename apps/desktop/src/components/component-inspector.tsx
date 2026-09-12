@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import type { Document, Graph, Project } from '@worklens/contracts';
+import type { Document, Graph } from '@worklens/contracts';
 import { ArrowRight, Box } from 'lucide-react';
 import { useState } from 'react';
 import { openSource, query } from '../lib/api';
+import { type ComponentProject, ecosystems } from '../lib/component-graph';
 import { useData, useSession } from '../lib/session';
 import { ErrorNotice } from './common';
 import { TaskGraph } from './task-graph';
@@ -14,7 +15,7 @@ export function ComponentInspector({
   graph,
   onSelect,
 }: {
-  selected: Project | null;
+  selected: ComponentProject | null;
   graph?: Graph;
   onSelect: (id: string | null) => void;
 }) {
@@ -26,7 +27,7 @@ function InspectorDetails({
   graph,
   onSelect,
 }: {
-  selected: Project | null;
+  selected: ComponentProject | null;
   graph?: Graph;
   onSelect: (id: string | null) => void;
 }) {
@@ -55,9 +56,22 @@ function InspectorDetails({
             </Button>
           </div>
           <h2 className="text-lg font-semibold tracking-tight">{selected.name}</h2>
-          <p className="mt-2 break-all font-mono text-[11px] text-muted-foreground">{selected.manifest}</p>
+          {selected.members.map((member) => (
+            <div key={member.id} className="mt-2">
+              {selected.members.length > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  {member.ecosystem} · {member.name}
+                </p>
+              )}
+              <p className="break-all font-mono text-[11px] text-muted-foreground">{member.manifest}</p>
+            </div>
+          ))}
           <div className="mt-4 flex gap-2">
-            <Badge variant="secondary">{selected.ecosystem}</Badge>
+            {ecosystems(selected).map((ecosystem) => (
+              <Badge key={ecosystem} variant="secondary">
+                {ecosystem}
+              </Badge>
+            ))}
             <Badge variant="outline">{selected.kind}</Badge>
           </div>
           <ErrorNotice error={error} />
@@ -104,25 +118,27 @@ function InspectorDetails({
               </section>
             );
           })}
-          {selected.targets.length > 0 && (
+          {selected.members.some((member) => member.targets.length > 0) && (
             <details className="mt-7">
               <summary className="cursor-pointer text-xs font-medium">Available targets</summary>
               <div className="mt-3 flex flex-wrap gap-2">
-                {selected.targets.map((target) => (
-                  <Button
-                    key={target}
-                    size="sm"
-                    variant="outline"
-                    disabled={selected.ecosystem !== 'nx' || !repo?.trusted}
-                    onClick={() =>
-                      void query('tasks', repo?.path, { project: selected.name, target })
-                        .then(setTasks)
-                        .catch((e) => setError(String(e)))
-                    }
-                  >
-                    {target}
-                  </Button>
-                ))}
+                {selected.members.flatMap((member) =>
+                  member.targets.map((target) => (
+                    <Button
+                      key={`${member.id}:${target}`}
+                      size="sm"
+                      variant="outline"
+                      disabled={member.ecosystem !== 'nx' || !repo?.trusted}
+                      onClick={() =>
+                        void query('tasks', repo?.path, { project: member.name, target })
+                          .then(setTasks)
+                          .catch((e) => setError(String(e)))
+                      }
+                    >
+                      {selected.members.length > 1 ? `${member.ecosystem} · ${target}` : target}
+                    </Button>
+                  )),
+                )}
                 <p className="text-[10px] text-muted-foreground">
                   Inspect the task graph. Requires repository trust.
                 </p>

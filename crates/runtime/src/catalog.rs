@@ -56,6 +56,7 @@ pub async fn collect(repo: &Repository) -> Result<Graph> {
                 .push(Provenance::unavailable("pnpm", &e.to_string())),
         }
     }
+    graph.components = worklens_core::graph_components::detect(&graph);
     Ok(graph)
 }
 
@@ -117,6 +118,7 @@ pub async fn files(root: &Path) -> Result<Vec<String>> {
 
 pub async fn passive(root: &Path) -> Result<Graph> {
     let mut graph = Graph {
+        components: vec![],
         nodes: vec![],
         edges: vec![],
         sources: vec![Provenance::observed(

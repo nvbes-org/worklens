@@ -16,7 +16,12 @@ export type RelationKind = "project_dependency" | "package_dependency" | "task_d
 export type Evidence = "observed" | "declared" | "candidate";
 export type Project = { id: string, name: string, root: string, kind: string, ecosystem: string, manifest: string, external: boolean, targets: Array<string>, features: Array<string>, };
 export type Edge = { source: string, target: string, kind: RelationKind, evidence: Evidence, origin: string, };
-export type Graph = { nodes: Array<Project>, edges: Array<Edge>, sources: Array<Provenance>, };
+export type Graph = { nodes: Array<Project>, edges: Array<Edge>, sources: Array<Provenance>,
+/**
+ * Presentation identities; raw nodes remain available for evidence and task queries.
+ */
+components: Array<ComponentGroup>, };
+export type ComponentGroup = { id: string, memberIds: Array<string>, };
 export type Impact = { direct: Array<string>, dependants: Array<string>, warning: string, };
 export type PrRevision = { baseRepository: string, headRepository: string | null, baseSha: string, headSha: string, expectedFiles: number, };
 export type PrChangedFile = { path: string, previousPath: string | null, status: string, };

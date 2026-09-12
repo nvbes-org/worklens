@@ -64,11 +64,12 @@
   box-shadow: 0 0 0 3px #007aff0a;
 }
 .graph-node-label {
-  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
 }
 .graph-node-label > span {
   display: block;
-  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -76,6 +77,8 @@
   font-weight: 600;
 }
 .graph-node-label small {
+  grid-row: 2;
+  grid-column: 1 / -1;
   display: block;
   margin-top: 6px;
   overflow: hidden;
@@ -86,9 +89,9 @@
   font-size: 9px;
 }
 .graph-node-label em {
-  position: absolute;
-  top: 2px;
-  right: 0;
+  grid-row: 1;
+  grid-column: 2;
+  align-self: center;
   color: #a1a1aa;
   font-size: 9px;
   font-style: normal;

@@ -46,6 +46,8 @@ The per-user socket is not a security boundary against other processes running a
 
 The local service outlives its desktop client. Restarting or hot-reloading the desktop does not replace an already-running service: `transport::ensure` reuses its socket. After engine changes, rebuild the binary, identify and stop the old Worklens `serve` process, and let the updated client start the service before refreshing the graph. Do not delete the database or reset repository trust. `doctor.engine` reports the actual service PID, executable and package version to distinguish an old bundled service from the current development client.
 
+Each transport request recovers a missing or refused socket by starting the service from the current client executable, in a separate process group, then connecting again. Recovery happens only before request bytes are sent: failures after writing are returned without automatically replaying a potentially mutating operation.
+
 ## Sources
 
 - [Tauri process model](https://v2.tauri.app/concept/process-model/)

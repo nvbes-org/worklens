@@ -104,7 +104,7 @@ export function Shell() {
       </aside>
       <div className="main-screen" inert={settingsOpen} aria-hidden={settingsOpen}>
         <main className="workspace-content" id="main-content">
-          <ErrorNotice error={error} />
+          {repo && <ErrorNotice error={error} />}
           {repo ? <WorkspaceView key={repo.path} view={view} /> : <Welcome />}
         </main>
       </div>

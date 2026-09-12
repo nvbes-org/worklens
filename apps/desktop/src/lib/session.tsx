@@ -1,11 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AgentSession, GitSnapshot, Graph, JsonValue, Operation, Repository } from '@worklens/contracts';
+import type { GitSnapshot, Graph, JsonValue, Operation, Repository } from '@worklens/contracts';
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { query } from './api';
 
 const SessionContext = createContext<{
   repo: Repository | null;
-  open: (path: string) => Promise<void>;
+  open: (path: string) => Promise<boolean>;
   error: string;
   setRepo: (repo: Repository) => void;
 } | null>(null);
@@ -19,8 +19,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setRepo(repo);
       setError('');
       await client.invalidateQueries({ queryKey: ['recent'] });
+      return true;
     } catch (error) {
       setError(String(error));
+      return false;
     }
   }
   return <SessionContext.Provider value={{ repo, open, error, setRepo }}>{children}</SessionContext.Provider>;
@@ -45,7 +47,4 @@ export function useGit() {
 }
 export function useGraph() {
   return useData<Graph>('graph');
-}
-export function useAgents() {
-  return useData<AgentSession[]>('agents', {}, 10_000);
 }

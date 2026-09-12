@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { isTauri } from '@tauri-apps/api/core';
 import type { Repository } from '@worklens/contracts';
-import { ArrowRight, Bot, FolderOpen, GitBranch, Network } from 'lucide-react';
+import { ArrowRight, FolderOpen, GitBranch, Network } from 'lucide-react';
 import { useState } from 'react';
 import { query } from '../lib/api';
 import { useSession } from '../lib/session';
@@ -21,12 +21,10 @@ export function Welcome() {
   }
   return (
     <div className="mx-auto flex min-h-[75vh] max-w-2xl flex-col justify-center py-12">
-      <div className="mb-8 flex size-16 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-        W
-      </div>
       <h1 className="text-4xl font-semibold tracking-tight">See the whole picture.</h1>
       <p className="mt-4 max-w-lg text-base leading-7 text-muted-foreground">
-        Your code, delivery and agents. Connected in one local workspace, with a source behind every signal.
+        Your repository facts connected in one local workspace. Explore parallel worktrees and component
+        architecture.
       </p>
       <form
         className="mt-8 flex gap-2"
@@ -72,15 +70,11 @@ export function Welcome() {
       <div className="mt-12 flex gap-8 border-t pt-6 text-xs text-muted-foreground">
         <span className="flex gap-2">
           <GitBranch className="size-4" />
-          Git & delivery
+          Parallel worktrees
         </span>
         <span className="flex gap-2">
           <Network className="size-4" />
-          Architecture
-        </span>
-        <span className="flex gap-2">
-          <Bot className="size-4" />
-          Agent presence
+          Component architecture
         </span>
       </div>
     </div>

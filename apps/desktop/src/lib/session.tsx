@@ -14,6 +14,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState('');
   const client = useQueryClient();
   async function open(path: string) {
+    if (!path.trim()) return false;
     try {
       const repo = await query<Repository>('open', path);
       setRepo(repo);

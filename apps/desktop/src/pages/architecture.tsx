@@ -7,6 +7,7 @@ import ELK from 'elkjs/lib/elk-api.js';
 import { List, Network, RefreshCw } from 'lucide-react';
 import { Empty, ErrorNotice, Loading, Source } from '../components/common';
 import { ComponentInspector } from '../components/component-inspector';
+import { NxTrustNotice } from '../components/nx-trust-notice';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -131,6 +132,7 @@ export function ArchitecturePage() {
         </Button>
       </ViewHeading>
       <ErrorNotice error={graph.error || error} />
+      <NxTrustNotice graph={graph.data} />
       <div className="architecture-controls">
         <fieldset className="view-segment" aria-label="Architecture view">
           <Button

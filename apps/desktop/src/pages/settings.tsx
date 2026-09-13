@@ -1,164 +1,293 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Repository, ToolStatus } from '@worklens/contracts';
-import { useEffect, useState } from 'react';
-import { ErrorNotice, PageTitle } from '../components/common';
-import { GitHubInstallation, WORKLENS_CLIENT_ID } from '../components/github-installation';
-import { Badge } from '../components/ui/badge';
+import { ArrowLeft, Folder, GitBranch, Info, Keyboard, Palette, Settings2 } from 'lucide-react';
+import { type ReactNode, type RefObject, useState } from 'react';
+import { ErrorNotice, Loading } from '../components/common';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { openUrl, query } from '../lib/api';
+import { query } from '../lib/api';
+import { usePreferences } from '../lib/preferences';
 import { useSession } from '../lib/session';
 
-type Device = { id: string; userCode: string; verificationUri: string; interval: number; expiresIn: number };
-export function SettingsPage() {
+const categories = [
+  { id: 'general', label: 'General', icon: Settings2 },
+  { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'projects', label: 'Projects', icon: Folder },
+  { id: 'git', label: 'Git', icon: GitBranch },
+  { id: 'shortcuts', label: 'Keyboard shortcuts', icon: Keyboard },
+  { id: 'about', label: 'About', icon: Info },
+];
+function PreferenceRow({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="preference-row">
+      <div className="min-w-0">
+        <h3 className="text-[13px] font-medium">{title}</h3>
+        <div className="mt-1.5 text-xs leading-5 text-muted-foreground">{description}</div>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+function Switch({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-label={label}
+      aria-checked={checked}
+      className="preference-switch"
+      onClick={() => onChange(!checked)}
+    >
+      <span />
+    </button>
+  );
+}
+
+export function SettingsPage({
+  active,
+  onBack,
+  backRef,
+}: {
+  active: boolean;
+  onBack: () => void;
+  backRef: RefObject<HTMLButtonElement | null>;
+}) {
   const { repo, setRepo } = useSession();
+  const { preferences, update, storageError } = usePreferences();
   const client = useQueryClient();
-  const [clientId, setClientId] = useState('');
-  const [device, setDevice] = useState<Device | null>(null);
+  const [category, setCategory] = useState('general');
   const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const auth = useQuery({
-    queryKey: ['github-auth'],
-    queryFn: () => query<{ connected: boolean; clientId: string | null }>('github_auth_status'),
-  });
+  const [trustBusy, setTrustBusy] = useState(false);
   const doctor = useQuery({
     queryKey: ['doctor'],
     queryFn: () => query<{ tools: ToolStatus[]; dataDirectory: string; protocol: number }>('doctor'),
+    enabled: active,
   });
-  useEffect(() => {
-    if (!device) return;
-    const timer = setInterval(() => {
-      void query<{ status: string }>('github_auth_poll', null, { id: device.id })
-        .then((result) => {
-          if (result.status === 'connected') {
-            setDevice(null);
-            void client.invalidateQueries();
-          }
-        })
-        .catch((e) => {
-          setError(String(e));
-          setDevice(null);
-        });
-    }, device.interval * 1000);
-    return () => clearInterval(timer);
-  }, [device, client]);
-  async function connect() {
-    setError('');
-    setBusy(true);
-    try {
-      const device = await query<Device>('github_auth_start', null, {
-        clientId: clientId || auth.data?.clientId || WORKLENS_CLIENT_ID,
-      });
-      setDevice(device);
-      await openUrl(device.verificationUri);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
   async function trust(trusted: boolean) {
     if (!repo) return;
+    setTrustBusy(true);
+    setError('');
     try {
       setRepo(await query<Repository>('trust', repo.path, { trusted }));
       await client.invalidateQueries({ queryKey: ['graph'] });
     } catch (e) {
       setError(String(e));
+    } finally {
+      setTrustBusy(false);
     }
   }
+  const heading = categories.find((item) => item.id === category)?.label ?? 'General';
   return (
-    <>
-      <PageTitle
-        title="Workspace settings"
-        description="Local preferences, source connections and explicit execution trust."
-      />
-      <ErrorNotice error={error || auth.error || doctor.error} />
-      <section className="mb-8 max-w-3xl rounded-xl border bg-white p-6">
-        <div className="flex justify-between">
-          <h2 className="font-semibold">GitHub connection</h2>
-          <Badge variant="outline">{auth.data?.connected ? 'Connected' : 'Not connected'}</Badge>
-        </div>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Use the client ID of a GitHub App with Device Flow enabled. Install it on the repositories you want
-          to observe. Authorization opens on GitHub; the token stays in your macOS Keychain.
-        </p>
-        <label className="mt-5 block text-xs font-medium" htmlFor="client-id">
-          GitHub App client ID
-        </label>
-        <Input
-          id="client-id"
-          className="mt-2"
-          placeholder={auth.data?.clientId || WORKLENS_CLIENT_ID}
-          value={clientId}
-          onChange={(e) => setClientId(e.target.value)}
-        />
-        <div className="mt-4 flex gap-3">
-          <Button disabled={busy || Boolean(device)} onClick={() => void connect()}>
-            Connect GitHub
-          </Button>
-          {auth.data?.connected && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                void query('github_logout')
-                  .then(() => client.invalidateQueries())
-                  .catch((e) => setError(String(e)));
-              }}
+    <div className="settings-layout">
+      <header className="settings-header">
+        <Button ref={backRef} variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft className="size-4" />
+          Back to project
+        </Button>
+      </header>
+      <aside className="settings-categories">
+        <p className="mb-6 px-3 text-xl font-semibold tracking-tight">Settings</p>
+        <nav aria-label="Settings categories">
+          {categories.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setCategory(item.id)}
+              aria-current={category === item.id ? 'page' : undefined}
+              className={category === item.id ? 'selected' : ''}
             >
-              Disconnect
-            </Button>
-          )}
-        </div>
-        <GitHubInstallation
-          key={`${repo?.path}:${clientId || auth.data?.clientId}:${auth.data?.connected}`}
-          clientId={clientId || auth.data?.clientId || WORKLENS_CLIENT_ID}
-          connected={auth.data?.connected ?? false}
-          repository={repo?.path ?? null}
-        />
-        {device && (
-          <div className="mt-5 rounded-lg bg-muted p-4">
-            <p className="text-sm">Enter this code on GitHub:</p>
-            <p className="my-3 font-mono text-2xl tracking-widest">{device.userCode}</p>
-            <p className="text-xs text-muted-foreground">
-              Waiting for authorization. The code expires after {Math.round(device.expiresIn / 60)} minutes.
+              <item.icon className="size-4" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </aside>
+      <main className="settings-content" aria-label="Settings">
+        <h1 className="text-[28px] font-semibold tracking-[-0.035em]">{heading}</h1>
+        <p className="mt-2 mb-8 text-[13px] text-muted-foreground">Make Worklens feel like your workspace.</p>
+        <ErrorNotice error={error || storageError || doctor.error} />
+        {category === 'general' && (
+          <>
+            <h2 className="settings-section-label">Your workspace</h2>
+            <div className="preference-group">
+              <PreferenceRow title="Start page" description="The page shown when you open a project.">
+                <select
+                  aria-label="Start page"
+                  className="preference-select"
+                  value={preferences.startView}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'overview' || value === 'architecture' || value === 'git')
+                      update({ startView: value });
+                  }}
+                >
+                  <option value="overview">Overview</option>
+                  <option value="architecture">Architecture</option>
+                  <option value="git">Git</option>
+                </select>
+              </PreferenceRow>
+              <PreferenceRow title="Sidebar" description="Keep the project sidebar collapsed by default.">
+                <Switch
+                  label="Keep sidebar collapsed"
+                  checked={preferences.sidebarCollapsed}
+                  onChange={(sidebarCollapsed) => update({ sidebarCollapsed })}
+                />
+              </PreferenceRow>
+              <PreferenceRow title="Language" description="Worklens currently uses English.">
+                <span className="text-xs text-muted-foreground">English</span>
+              </PreferenceRow>
+            </div>
+            <h2 className="settings-section-label mt-8">Local data</h2>
+            <div className="preference-group">
+              <PreferenceRow
+                title="Data directory"
+                description={
+                  <span className="break-all font-mono text-[11px]">
+                    {doctor.data?.dataDirectory ?? (doctor.isPending ? 'Loading…' : 'Unavailable')}
+                  </span>
+                }
+              >
+                <span className="text-[11px] text-muted-foreground">On this device</span>
+              </PreferenceRow>
+            </div>
+            <p className="mt-5 text-xs text-muted-foreground">
+              Preferences are saved automatically on this device.
             </p>
+          </>
+        )}
+        {category === 'appearance' && (
+          <div className="preference-group">
+            <PreferenceRow
+              title="Appearance"
+              description="A light workspace with a soft, translucent sidebar."
+            >
+              <span className="text-xs text-muted-foreground">Light</span>
+            </PreferenceRow>
+            <PreferenceRow
+              title="Reduce motion"
+              description="Show panels immediately. System reduced-motion preferences are always respected."
+            >
+              <Switch
+                label="Reduce motion"
+                checked={preferences.reduceMotion}
+                onChange={(reduceMotion) => update({ reduceMotion })}
+              />
+            </PreferenceRow>
+            <PreferenceRow
+              title="Compact rows"
+              description="Fit more files and components in your workspace."
+            >
+              <Switch
+                label="Compact rows"
+                checked={preferences.compact}
+                onChange={(compact) => update({ compact })}
+              />
+            </PreferenceRow>
           </div>
         )}
-      </section>
-      {repo && (
-        <section className="mb-8 max-w-3xl rounded-xl border bg-white p-6">
-          <h2 className="font-semibold">Repository execution trust</h2>
-          <p className="mt-3 font-mono text-xs text-muted-foreground">{repo.path}</p>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Nx plugins execute code from this repository. Trust enables local Nx and pnpm queries. Worklens
-            never installs missing dependencies or starts build/test tasks from this screen.
-          </p>
-          <Button
-            className="mt-4"
-            variant={repo.trusted ? 'outline' : 'default'}
-            onClick={() => void trust(!repo.trusted)}
-          >
-            {repo.trusted ? 'Revoke execution trust' : 'Trust this repository'}
-          </Button>
-        </section>
-      )}
-      <section className="max-w-3xl">
-        <h2 className="mb-4 font-semibold">Tool diagnostics</h2>
-        <div className="divide-y rounded-xl border bg-white">
-          {doctor.data?.tools.map((tool) => (
-            <div key={tool.tool} className="flex justify-between p-4 text-sm">
-              <span>{tool.tool}</span>
-              <span className={tool.available ? 'text-muted-foreground' : 'text-amber-800'}>
-                {tool.version}
-              </span>
+        {category === 'projects' &&
+          (repo ? (
+            <div className="preference-group">
+              <PreferenceRow
+                title={repo.name}
+                description={<span className="break-all font-mono text-[11px]">{repo.path}</span>}
+              >
+                <Folder className="size-4 text-muted-foreground" />
+              </PreferenceRow>
+              <PreferenceRow
+                title="Repository execution trust"
+                description="Allow Nx and pnpm queries in this repository. Nx plugins can execute repository code."
+              >
+                <Button
+                  size="sm"
+                  variant={repo.trusted ? 'outline' : 'default'}
+                  disabled={trustBusy}
+                  onClick={() => void trust(!repo.trusted)}
+                >
+                  {repo.trusted ? 'Revoke execution trust' : 'Trust this repository'}
+                </Button>
+              </PreferenceRow>
             </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Open a project to manage its trust settings.</p>
           ))}
-        </div>
-        <p className="mt-4 font-mono text-xs text-muted-foreground">Data: {doctor.data?.dataDirectory}</p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Protocol {doctor.data?.protocol ?? 1} · Local alpha · No hosted Worklens service
-        </p>
-      </section>
-    </>
+        {category === 'git' && (
+          <div className="preference-group">
+            <PreferenceRow
+              title="Repository operations"
+              description="Changes, diffs, branches and history are inspected locally."
+            >
+              <span className="text-xs text-muted-foreground">Read-only</span>
+            </PreferenceRow>
+            <PreferenceRow
+              title="Remote references"
+              description="Worklens displays the last known remote state. Refresh does not fetch."
+            >
+              <span className="text-xs text-muted-foreground">Local references</span>
+            </PreferenceRow>
+            <PreferenceRow
+              title="Stage, commit and sync"
+              description="Use your editor or terminal for Git write operations."
+            >
+              <span className="text-xs text-muted-foreground">Not available yet</span>
+            </PreferenceRow>
+          </div>
+        )}
+        {category === 'shortcuts' && (
+          <div className="preference-group">
+            <PreferenceRow title="Search project" description="Find components and documents.">
+              <kbd className="shortcut-key">⌘ / Ctrl K</kbd>
+            </PreferenceRow>
+            <PreferenceRow
+              title="Return to project"
+              description="Close Settings and return to your previous screen."
+            >
+              <kbd className="shortcut-key">Esc</kbd>
+            </PreferenceRow>
+            <PreferenceRow title="Navigate controls" description="Move between interactive controls.">
+              <kbd className="shortcut-key">Tab / Shift Tab</kbd>
+            </PreferenceRow>
+          </div>
+        )}
+        {category === 'about' && (
+          <>
+            <div className="preference-group">
+              <PreferenceRow title="Worklens" description="Your monorepo, in one local workspace.">
+                <span className="text-xs text-muted-foreground">0.1.0-alpha.1</span>
+              </PreferenceRow>
+            </div>
+            <h2 className="settings-section-label mt-8">Tool diagnostics</h2>
+            {doctor.isPending && <Loading />}
+            <div className="preference-group">
+              {doctor.data?.tools.map((tool) => (
+                <PreferenceRow key={tool.tool} title={tool.tool} description={tool.version}>
+                  <span className={tool.available ? 'text-xs text-emerald-700' : 'text-xs text-amber-700'}>
+                    {tool.available ? 'Available' : 'Unavailable'}
+                  </span>
+                </PreferenceRow>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Protocol {doctor.data?.protocol ?? '—'} · Local alpha · No hosted Worklens service
+            </p>
+          </>
+        )}
+      </main>
+    </div>
   );
 }

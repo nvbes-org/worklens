@@ -1,6 +1,9 @@
 pub mod agents;
+mod component_metadata;
 pub mod decision;
 pub mod graph;
+pub mod graph_components;
+pub use component_metadata::*;
 pub mod model;
 pub mod pr_impact;
 pub mod protocol;

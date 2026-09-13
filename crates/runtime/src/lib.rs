@@ -1,13 +1,17 @@
 pub mod catalog;
 pub mod catalog_cargo;
 pub mod catalog_nx;
+pub mod catalog_vendors;
+mod catalog_workspace;
 pub mod command;
+pub mod component_metadata;
 mod context_snapshot;
 pub mod documents;
 pub mod git;
 pub mod github;
 pub mod github_auth;
 pub mod github_impact;
+mod metadata_integrity;
 pub mod paths;
 pub mod service;
 pub mod service_agents;

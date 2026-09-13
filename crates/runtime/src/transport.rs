@@ -1,7 +1,10 @@
 use crate::{Result, error, paths::data_dir, service::Service};
 use fs2::FileExt;
 use std::{
-    os::unix::fs::{OpenOptionsExt, PermissionsExt},
+    os::unix::{
+        fs::{OpenOptionsExt, PermissionsExt},
+        process::CommandExt,
+    },
     path::Path,
     sync::Arc,
     time::Duration,
@@ -68,7 +71,8 @@ async fn handle(stream: UnixStream, service: Arc<Service>) -> Result<()> {
 
 pub async fn send(request: &Request) -> Result<Response> {
     let socket = data_dir()?.join("service.sock");
-    let stream = UnixStream::connect(&socket).await?;
+    let stream =
+        connect_or_start(&socket, async { ensure(&std::env::current_exe()?).await }).await?;
     let (read, mut write) = stream.into_split();
     write.write_all(&serde_json::to_vec(request)?).await?;
     write.write_all(b"\n").await?;
@@ -86,6 +90,26 @@ pub async fn send(request: &Request) -> Result<Response> {
     Ok(serde_json::from_slice(&bytes)?)
 }
 
+// Recover only before sending bytes. Replaying after a write could duplicate a mutation.
+async fn connect_or_start(
+    socket: &Path,
+    start: impl std::future::Future<Output = Result<()>>,
+) -> Result<UnixStream> {
+    match UnixStream::connect(socket).await {
+        Ok(stream) => Ok(stream),
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::NotFound | std::io::ErrorKind::ConnectionRefused
+            ) =>
+        {
+            start.await?;
+            Ok(UnixStream::connect(socket).await?)
+        }
+        Err(error) => Err(error.into()),
+    }
+}
+
 pub async fn ensure(binary: &Path) -> Result<()> {
     let socket = data_dir()?.join("service.sock");
     if UnixStream::connect(&socket).await.is_ok() {
@@ -93,6 +117,7 @@ pub async fn ensure(binary: &Path) -> Result<()> {
     }
     std::process::Command::new(binary)
         .arg("serve")
+        .process_group(0)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
@@ -104,4 +129,48 @@ pub async fn ensure(binary: &Path) -> Result<()> {
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
     Err(error("Could not start local Worklens service"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn reconnects_missing_and_stale_sockets_before_dispatch() {
+        let dir = tempfile::tempdir().unwrap();
+        let socket = dir.path().join("service.sock");
+        for stale in [false, true] {
+            if stale {
+                drop(std::os::unix::net::UnixListener::bind(&socket).unwrap());
+            }
+            let mut listener = None;
+            let stream = connect_or_start(&socket, async {
+                if socket.exists() {
+                    std::fs::remove_file(&socket)?;
+                }
+                listener = Some(UnixListener::bind(&socket)?);
+                Ok(())
+            })
+            .await
+            .unwrap();
+            assert!(listener.is_some());
+            drop(stream);
+            drop(listener);
+            std::fs::remove_file(&socket).unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn live_service_is_reused_and_start_failure_is_returned() {
+        let dir = tempfile::tempdir().unwrap();
+        let socket = dir.path().join("service.sock");
+        let listener = UnixListener::bind(&socket).unwrap();
+        let stream = connect_or_start(&socket, async { panic!("live service must not restart") })
+            .await
+            .unwrap();
+        drop(stream);
+        drop(listener.into_std().unwrap());
+        let result = connect_or_start(&socket, async { Err(error("startup failed")) }).await;
+        assert!(result.unwrap_err().to_string().contains("startup failed"));
+    }
 }

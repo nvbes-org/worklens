@@ -69,6 +69,8 @@ impl Service {
         let key = format!("graph:{}", repo.path);
         if !refresh && let Some(value) = self.db()?.cache(&key)? {
             let mut graph: Graph = serde_json::from_value(value)?;
+            crate::catalog_workspace::filter_cached(Path::new(&repo.path), &mut graph)?;
+            graph.components = worklens_core::graph_components::detect(&graph);
             for source in &mut graph.sources {
                 if source.status == Availability::Available {
                     source.status = Availability::Stale;
@@ -146,10 +148,16 @@ impl Service {
                 )
                 .await?,
             )?),
-            Operation::Projects | Operation::Graph => Ok(serde_json::to_value(
-                self.graph(&repo, p["refresh"].as_bool().unwrap_or(false))
-                    .await?,
-            )?),
+            Operation::Projects | Operation::Graph => {
+                let mut graph = self
+                    .graph(&repo, p["refresh"].as_bool().unwrap_or(false))
+                    .await?;
+                if p["includeVendors"].as_bool().unwrap_or(false) {
+                    crate::catalog_vendors::extend(root, &mut graph)?;
+                }
+                Ok(serde_json::to_value(graph)?)
+            }
+            Operation::ComponentMetadata => crate::component_metadata::query(self, &repo, p).await,
             Operation::Tasks => {
                 if !repo.trusted {
                     return Err(error("Trust this repository before executing Nx"));
@@ -271,7 +279,9 @@ impl Service {
             });
         }
         Ok(
-            json!({ "tools": tools, "protocol": PROTOCOL_VERSION, "dataDirectory": crate::paths::data_dir()?, "github": crate::github_auth::status() }),
+            json!({ "tools": tools, "protocol": PROTOCOL_VERSION, "dataDirectory": crate::paths::data_dir()?, "github": crate::github_auth::status(),
+                "engine": { "pid": std::process::id(), "executable": std::env::current_exe()?, "version": env!("CARGO_PKG_VERSION") }
+            }),
         )
     }
 }

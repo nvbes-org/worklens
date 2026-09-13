@@ -48,6 +48,7 @@ pub fn parse(root: &Path, value: &Value) -> Result<Graph> {
         .cloned()
         .unwrap_or_default();
     let mut graph = Graph {
+        components: vec![],
         nodes: vec![],
         edges: vec![],
         sources: vec![Provenance::observed(

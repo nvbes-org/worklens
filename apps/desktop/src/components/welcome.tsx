@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { isTauri } from '@tauri-apps/api/core';
 import type { Repository } from '@worklens/contracts';
-import { ArrowRight, Bot, FolderOpen, GitBranch, Network } from 'lucide-react';
+import { ArrowRight, FolderOpen, GitBranch, Network } from 'lucide-react';
 import { useState } from 'react';
 import { query } from '../lib/api';
 import { useSession } from '../lib/session';
@@ -12,22 +12,23 @@ import { Input } from './ui/input';
 export function Welcome() {
   const { open, error } = useSession();
   const [path, setPath] = useState('');
+  const [browseError, setBrowseError] = useState('');
   const recent = useQuery({ queryKey: ['recent'], queryFn: () => query<Repository[]>('recent') });
   async function browse() {
     if (!isTauri()) return;
-    const { open: choose } = await import('@tauri-apps/plugin-dialog');
-    const selected = await choose({ directory: true, multiple: false });
-    if (typeof selected === 'string') await open(selected);
+    setBrowseError('');
+    try {
+      const { open: choose } = await import('@tauri-apps/plugin-dialog');
+      const selected = await choose({ directory: true, multiple: false });
+      if (selected === null) return;
+      if (typeof selected === 'string') await open(selected);
+    } catch (error) {
+      setBrowseError(String(error));
+    }
   }
   return (
     <div className="mx-auto flex min-h-[75vh] max-w-2xl flex-col justify-center py-12">
-      <div className="mb-8 flex size-16 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-        W
-      </div>
       <h1 className="text-4xl font-semibold tracking-tight">See the whole picture.</h1>
-      <p className="mt-4 max-w-lg text-base leading-7 text-muted-foreground">
-        Your code, delivery and agents. Connected in one local workspace, with a source behind every signal.
-      </p>
       <form
         className="mt-8 flex gap-2"
         onSubmit={(e) => {
@@ -41,16 +42,16 @@ export function Welcome() {
           value={path}
           onChange={(e) => setPath(e.target.value)}
         />
-        <Button type="submit" disabled={!path}>
+        <Button type="submit" disabled={!path.trim()}>
           Open repository
           <ArrowRight className="size-4" />
         </Button>
+        <Button type="button" variant="ghost" className="self-start" onClick={() => void browse()}>
+          <FolderOpen className="size-4" />
+          Browse folders
+        </Button>
       </form>
-      <Button variant="ghost" className="mt-2 self-start" onClick={() => void browse()}>
-        <FolderOpen className="size-4" />
-        Browse folders
-      </Button>
-      <ErrorNotice error={error || recent.error} />
+      <ErrorNotice error={error || browseError || recent.error} />
       {Boolean(recent.data?.length) && (
         <div className="mt-6 border-t pt-6">
           <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -72,15 +73,11 @@ export function Welcome() {
       <div className="mt-12 flex gap-8 border-t pt-6 text-xs text-muted-foreground">
         <span className="flex gap-2">
           <GitBranch className="size-4" />
-          Git & delivery
+          Parallel worktrees
         </span>
         <span className="flex gap-2">
           <Network className="size-4" />
-          Architecture
-        </span>
-        <span className="flex gap-2">
-          <Bot className="size-4" />
-          Agent presence
+          Component architecture
         </span>
       </div>
     </div>

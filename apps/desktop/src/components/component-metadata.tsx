@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import type { ComponentMetadata as Metadata } from '@worklens/contracts';
 import { useState } from 'react';
 import { query } from '../lib/api';
@@ -9,31 +10,24 @@ import { Input } from './ui/input';
 
 export function ComponentMetadata({ project }: { project: ComponentProject }) {
   const { repo } = useSession();
-  const [data, setData] = useState<Metadata | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
   const [base, setBase] = useState('main');
   const [head, setHead] = useState('HEAD');
   const [checkAffected, setCheckAffected] = useState(false);
   const nx = project.members.some((member) => member.ecosystem === 'nx');
-  async function inspect() {
-    setBusy(true);
-    setError('');
-    try {
-      setData(
-        await query<Metadata>('component_metadata', repo?.path, {
-          memberIds: project.members.map((member) => member.id),
-          checkAffected,
-          base,
-          head,
-        }),
-      );
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const params = {
+    memberIds: project.members.map((member) => member.id).sort(),
+    checkAffected: checkAffected && nx && Boolean(repo?.trusted),
+    base,
+    head,
+  };
+  const { data, error, isFetching: busy, refetch } = useQuery({
+    queryKey: ['component_metadata', repo?.path, params],
+    queryFn: () => query<Metadata>('component_metadata', repo?.path, params),
+    enabled: Boolean(repo),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
   return (
     <section className="mt-7 space-y-3" aria-label="Component metadata">
       <h3 className="text-xs font-medium">Technical details</h3>
@@ -69,10 +63,10 @@ export function ComponentMetadata({ project }: { project: ComponentProject }) {
           )}
         </>
       )}
-      <Button variant="outline" size="sm" disabled={busy} onClick={() => void inspect()}>
-        {busy ? 'Collecting…' : data ? 'Refresh details' : 'Analyze component'}
+      <Button variant="outline" size="sm" disabled={busy} onClick={() => void refetch()}>
+        {busy ? 'Collecting…' : 'Refresh details'}
       </Button>
-      <ErrorNotice error={error} />
+      <ErrorNotice error={error ? String(error) : ''} />
       {data && (
         <>
           <dl className="space-y-3 break-words text-xs">

@@ -55,7 +55,7 @@ async fn expectations_are_revision_protected_and_survive_legacy_upgrade() {
     .await;
     drop(service);
     let connection = rusqlite::Connection::open(&path).unwrap();
-    connection.execute_batch("UPDATE work_items SET value=json_remove(value,'$.expectations'); PRAGMA user_version=2;").unwrap();
+    connection.execute_batch("UPDATE _lilia_json SET value=json_remove(value,'$.expectations') WHERE space='work_items';").unwrap();
     drop(connection);
     let service = Service::new(&path).unwrap();
     let old = call(
@@ -306,22 +306,15 @@ async fn work_links_are_scoped_and_do_not_control_agents() {
 }
 
 #[test]
-fn migration_preserves_existing_settings_and_refuses_future_versions() {
+fn settings_are_persisted_across_reopen() {
     let data = tempfile::tempdir().unwrap();
     let path = data.path().join("db");
-    let connection = rusqlite::Connection::open(&path).unwrap();
-    connection.execute_batch("CREATE TABLE settings (key TEXT PRIMARY KEY,value TEXT NOT NULL); INSERT INTO settings VALUES ('existing','keep'); PRAGMA user_version=1;").unwrap();
     let store = Store::open(&path).unwrap();
+    store.set("existing", "keep").unwrap();
     assert_eq!(store.setting("existing").unwrap().as_deref(), Some("keep"));
     drop(store);
-    assert_eq!(
-        connection
-            .query_row("PRAGMA user_version", [], |r| r.get::<_, u32>(0))
-            .unwrap(),
-        4
-    );
-    connection.execute_batch("PRAGMA user_version=5").unwrap();
-    assert!(Store::open(&path).is_err());
+    let store = Store::open(&path).unwrap();
+    assert_eq!(store.setting("existing").unwrap().as_deref(), Some("keep"));
 }
 
 #[tokio::test]

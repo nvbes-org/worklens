@@ -1,5 +1,5 @@
-use crate::{Result, error, service::Service};
-use serde_json::{Value, json};
+use crate::{error, service::Service, Result};
+use serde_json::{json, Value};
 use worklens_core::*;
 
 pub(crate) fn pr_identity(url: &str) -> Result<(&str, u64)> {

@@ -13,6 +13,9 @@ tokio.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 rusqlite = { version = "0.38", features = ["bundled"] }
+lilia-core = { path = "../../../liliadb/crates/lilia-core" }
+lilia-db = { path = "../../../liliadb/crates/lilia-db" }
+lilia-graph = { path = "../../../liliadb/crates/lilia-graph" }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 keyring = { version = "3.6.3", features = ["apple-native"] }
 directories = "6"
@@ -21,6 +24,12 @@ globset = "0.4"
 serde_yaml_ng = "0.10"
 toml = "0.9"
 sha2 = "0.10"
+notify.workspace = true
+sysinfo.workspace = true
+aurora-core = { path = "../aurora-core" }
+regex = "1"
+libc = "0.2"
+async-trait = "0.1"
 
 [dev-dependencies]
 tempfile.workspace = true

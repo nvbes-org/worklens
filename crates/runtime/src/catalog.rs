@@ -31,29 +31,9 @@ pub async fn collect(repo: &Repository) -> Result<Graph> {
         }
     }
     if root.join("pnpm-workspace.yaml").exists() && repo.trusted {
-        match command::run(
-            root,
-            "pnpm",
-            &["list", "--recursive", "--depth", "1", "--json"],
-        )
-        .await
-        {
-            Ok(bytes) => match serde_json::from_slice::<Vec<Value>>(&bytes) {
-                Ok(packages) => {
-                    for package in packages {
-                        add_resolved(&mut graph, root, &package);
-                    }
-                    graph.sources.push(Provenance::observed(
-                        "pnpm list --recursive --depth 1 --json (installed dependency data)",
-                    ));
-                }
-                Err(e) => graph
-                    .sources
-                    .push(Provenance::unavailable("pnpm", &e.to_string())),
-            },
-            Err(e) => graph
-                .sources
-                .push(Provenance::unavailable("pnpm", &e.to_string())),
+        match crate::catalog_pnpm::collect(root).await {
+            Ok(pnpm) => merge(&mut graph, pnpm),
+            Err(e) => graph.sources.push(Provenance::unavailable("pnpm", &e.to_string())),
         }
     }
     graph.components = worklens_core::graph_components::detect(&graph);
@@ -240,7 +220,7 @@ pub async fn passive(root: &Path) -> Result<Graph> {
     Ok(graph)
 }
 
-fn add_resolved(graph: &mut Graph, root: &Path, package: &Value) {
+pub(crate) fn add_resolved(graph: &mut Graph, root: &Path, package: &Value) {
     let Some(path) = package["path"].as_str() else {
         return;
     };

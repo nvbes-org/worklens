@@ -1,62 +1,42 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Repository, ToolStatus } from '@worklens/contracts';
-import { ArrowLeft, Folder, GitBranch, Info, Keyboard, Palette, Settings2 } from 'lucide-react';
-import { type ReactNode, type RefObject, useState } from 'react';
+import {
+  ArrowLeft,
+  Blocks,
+  Folder,
+  GitBranch,
+  Info,
+  Keyboard,
+  KeyRound,
+  Network,
+  Palette,
+  Settings2,
+  ShieldCheck,
+} from 'lucide-react';
+import { type RefObject, useState } from 'react';
 import { ErrorNotice, Loading } from '../components/common';
+import { PreferenceRow, Switch } from '../components/settings/settings-common';
+import { SettingsPermissions } from '../components/settings/settings-permissions';
+import { SettingsPluginsEngines } from '../components/settings/settings-plugins-engines';
+import { SettingsProfiles } from '../components/settings/settings-profiles';
+import { SettingsTransports } from '../components/settings/settings-transports';
 import { Button } from '../components/ui/button';
 import { query } from '../lib/api';
-import { usePreferences } from '../lib/preferences';
+import { type Theme, usePreferences } from '../lib/preferences';
 import { useSession } from '../lib/session';
 
 const categories = [
   { id: 'general', label: 'General', icon: Settings2 },
   { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'profiles', label: 'Profiles & Security', icon: ShieldCheck },
+  { id: 'transports', label: 'Transports & Endpoints', icon: Network },
+  { id: 'permissions', label: 'Permissions & Audit', icon: KeyRound },
+  { id: 'plugins', label: 'Plugins & Engines', icon: Blocks },
   { id: 'projects', label: 'Projects', icon: Folder },
   { id: 'git', label: 'Git', icon: GitBranch },
   { id: 'shortcuts', label: 'Keyboard shortcuts', icon: Keyboard },
   { id: 'about', label: 'About', icon: Info },
 ];
-function PreferenceRow({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="preference-row">
-      <div className="min-w-0">
-        <h3 className="text-[13px] font-medium">{title}</h3>
-        <div className="mt-1.5 text-xs leading-5 text-muted-foreground">{description}</div>
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
-function Switch({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-label={label}
-      aria-checked={checked}
-      className="preference-switch"
-      onClick={() => onChange(!checked)}
-    >
-      <span />
-    </button>
-  );
-}
 
 export function SettingsPage({
   active,
@@ -94,7 +74,7 @@ export function SettingsPage({
   const heading = categories.find((item) => item.id === category)?.label ?? 'General';
   return (
     <div className="settings-layout">
-      <header className="settings-header">
+      <header className="settings-header" data-tauri-drag-region>
         <Button ref={backRef} variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="size-4" />
           Back to project
@@ -174,9 +154,23 @@ export function SettingsPage({
           <div className="preference-group">
             <PreferenceRow
               title="Appearance"
-              description="A light workspace with a soft, translucent sidebar."
+              description="Choose between system theme, clean light or high-contrast dark mode."
             >
-              <span className="text-xs text-muted-foreground">Light</span>
+              <select
+                aria-label="Appearance"
+                className="preference-select"
+                value={preferences.theme}
+                onChange={(e) => {
+                  const val = e.target.value as Theme;
+                  if (val === 'system' || val === 'light' || val === 'dark') {
+                    update({ theme: val });
+                  }
+                }}
+              >
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
             </PreferenceRow>
             <PreferenceRow
               title="Reduce motion"
@@ -200,6 +194,10 @@ export function SettingsPage({
             </PreferenceRow>
           </div>
         )}
+        {category === 'profiles' && <SettingsProfiles />}
+        {category === 'transports' && <SettingsTransports />}
+        {category === 'permissions' && <SettingsPermissions />}
+        {category === 'plugins' && <SettingsPluginsEngines />}
         {category === 'projects' &&
           (repo ? (
             <div className="preference-group">

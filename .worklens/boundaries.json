@@ -1,0 +1,28 @@
+{
+  "$schema": "https://worklens.dev/schemas/boundaries.v1.json",
+  "layers": {
+    "apps": {
+      "matchPatterns": ["apps/**"],
+      "allowedDependencies": ["packages", "core", "runtime"]
+    },
+    "runtime": {
+      "matchPatterns": ["crates/runtime/**"],
+      "allowedDependencies": ["core"]
+    },
+    "core": {
+      "matchPatterns": ["crates/core/**"],
+      "allowedDependencies": []
+    },
+    "contracts": {
+      "matchPatterns": ["packages/contracts/**"],
+      "allowedDependencies": []
+    }
+  },
+  "rules": [
+    {
+      "name": "strict-layer-boundaries",
+      "severity": "failure",
+      "message": "Transgression of workspace architectural boundaries"
+    }
+  ]
+}

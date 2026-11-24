@@ -1,17 +1,22 @@
-use crate::{Result, error, storage::Store};
-use serde_json::{Value, json};
+use crate::{error, storage::Store, Result};
+use serde_json::{json, Value};
 use std::{
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::{Arc, Mutex},
 };
 use worklens_core::*;
 
 pub struct Service {
     pub(crate) contexts: Mutex<crate::context_snapshot::ContextSnapshots>,
-    pub store: Mutex<Store>,
+    pub store: Arc<Store>,
     pub auth: crate::github_auth::Auth,
     pub github: crate::github::Github,
     pub agent_lock: tokio::sync::Mutex<()>,
+    pub processes: crate::process_manager::ProcessManager,
+    pub permissions: Arc<crate::permissions::PermissionManager>,
+    pub plugins: Arc<crate::plugins::PluginManager>,
+    pub engines: Arc<crate::engines::EngineRegistry>,
+    pub transports: Arc<crate::transport_manager::TransportManager>,
 }
 
 pub fn text<'a>(params: &'a Value, key: &str) -> Result<&'a str> {
@@ -23,16 +28,33 @@ pub fn text<'a>(params: &'a Value, key: &str) -> Result<&'a str> {
 
 impl Service {
     pub fn new(path: &Path) -> Result<Self> {
+        let data_dir = path.parent().map(|p| p.to_path_buf());
+        let store = Arc::new(Store::open(path)?);
+        let permissions = Arc::new(crate::permissions::PermissionManager::new(store.db.clone()));
+        let plugins = Arc::new(crate::plugins::PluginManager::new(None));
+        let engines = Arc::new(crate::engines::EngineRegistry::new());
+        crate::engines::builtins::register_all(&engines);
+        let _ = plugins.sync_engines(&engines, &permissions);
+        let transports = Arc::new(crate::transport_manager::TransportManager::new());
+
         Ok(Self {
             contexts: Default::default(),
-            store: Mutex::new(Store::open(path)?),
+            store: store.clone(),
             auth: Default::default(),
             github: Default::default(),
             agent_lock: tokio::sync::Mutex::new(()),
+            processes: crate::process_manager::ProcessManager::with_db(
+                data_dir,
+                Some(store.db.clone()),
+            ),
+            permissions,
+            plugins,
+            engines,
+            transports,
         })
     }
-    pub fn db(&self) -> Result<std::sync::MutexGuard<'_, Store>> {
-        self.store.lock().map_err(|_| error("Storage unavailable"))
+    pub fn db(&self) -> Result<&Store> {
+        Ok(&self.store)
     }
 
     pub async fn request(&self, request: Request) -> Response {
@@ -80,12 +102,82 @@ impl Service {
         }
         let graph = crate::catalog::collect(repo).await?;
         self.db()?.put_cache(&key, &serde_json::to_value(&graph)?)?;
+        let session = self.store.db.system();
+        let gstore = lilia_graph::GraphStore::new(session.graph(&format!("repo:{}", repo.id)));
+        for node in &graph.nodes {
+            let metadata = serde_json::to_value(node).unwrap_or_default();
+            let _ = gstore.set_node(&node.id, &node.kind, &metadata);
+        }
+        for edge in &graph.edges {
+            let kind = format!("{:?}", edge.kind).to_lowercase();
+            let _ = gstore.add_edge(&edge.source, &edge.target, &kind);
+        }
         Ok(graph)
     }
 
     async fn dispatch(&self, request: &Request) -> Result<Value> {
         let p = &request.params;
         match &request.operation {
+            Operation::ConfigProfileList
+            | Operation::ConfigProfileGet
+            | Operation::ConfigProfileSave
+            | Operation::ConfigProfileDelete
+            | Operation::ConfigProfileActivate
+            | Operation::ConfigProfileActiveGet
+            | Operation::TransportsStatus
+            | Operation::TransportControl => {
+                return crate::service_config::dispatch(self, request).await;
+            }
+            Operation::PermissionGrantsList
+            | Operation::PermissionGrantSet
+            | Operation::PermissionAuditList
+            | Operation::PermissionCheck => {
+                return crate::service_permissions::dispatch(self, request).await;
+            }
+            Operation::PluginList
+            | Operation::PluginGet
+            | Operation::PluginInstall
+            | Operation::PluginUninstall
+            | Operation::PluginEnable
+            | Operation::PluginDisable
+            | Operation::EnginesList
+            | Operation::EngineExecute
+            | Operation::EngineRealtimeList
+            | Operation::EngineRealtimeStatus => {
+                return crate::service_plugins::dispatch(self, request).await;
+            }
+            Operation::MachineResourcesGet
+            | Operation::ProcessList
+            | Operation::ProcessStart
+            | Operation::ProcessStop
+            | Operation::ProcessKill
+            | Operation::ProcessRestart
+            | Operation::ProcessSendInput
+            | Operation::ProcessLogs
+            | Operation::ProcessClearLogs
+            | Operation::DiscoveredCommandsList
+            | Operation::AutoKillPolicyGet
+            | Operation::AutoKillPolicySet
+            | Operation::AutoKillEventsList
+            | Operation::EnvironmentProfilesList
+            | Operation::EnvironmentProfileSave
+            | Operation::EnvironmentProfileDelete => {
+                return crate::service_process::dispatch(self, request).await;
+            }
+            Operation::PreferencesGet => {
+                let key = p["key"].as_str().unwrap_or("appearance");
+                let val = self.db()?.setting(&format!("pref:{key}"))?;
+                let parsed = val
+                    .and_then(|v| serde_json::from_str::<Value>(&v).ok())
+                    .unwrap_or(Value::Null);
+                return Ok(parsed);
+            }
+            Operation::PreferencesSet => {
+                let key = p["key"].as_str().unwrap_or("appearance");
+                let val = serde_json::to_string(&p["value"]).unwrap_or_default();
+                self.db()?.set(&format!("pref:{key}"), &val)?;
+                return Ok(json!({ "saved": true }));
+            }
             Operation::Recent => return Ok(serde_json::to_value(self.db()?.recent()?)?),
             Operation::Doctor => return self.doctor().await,
             Operation::GithubAuthStatus => {
@@ -108,6 +200,39 @@ impl Service {
             Operation::GithubLogout => {
                 self.github.clear();
                 return crate::github_auth::logout();
+            }
+            Operation::ScalewayAuthStatus => {
+                let mut status = crate::scaleway_auth::status();
+                if let Ok(Some(pid)) = self.db()?.setting("scaleway_project_id") {
+                    status["projectId"] = json!(pid);
+                }
+                return Ok(status);
+            }
+            Operation::ScalewayAuthSet => {
+                let secret = text(p, "secretKey")?;
+                crate::scaleway_auth::set_token(secret)?;
+                if let Some(pid) = p["projectId"].as_str() {
+                    self.db()?.set("scaleway_project_id", pid)?;
+                }
+                return Ok(json!({ "saved": true, "connected": true }));
+            }
+            Operation::ScalewayAuthLogout => {
+                return crate::scaleway_auth::logout();
+            }
+            Operation::ScalewayLiveFetch => {
+                let (token, source) = crate::scaleway_auth::token()?;
+                let setting_pid = self.db()?.setting("scaleway_project_id").ok().flatten();
+                let pid = p["projectId"].as_str().or(setting_pid.as_deref());
+                let report = crate::scaleway_client::fetch_live_report(&token, source, pid).await;
+                return Ok(serde_json::to_value(report)?);
+            }
+            Operation::MultiRepoList
+            | Operation::MultiRepoGet
+            | Operation::MultiRepoSave
+            | Operation::MultiRepoDelete
+            | Operation::MultiRepoStatus
+            | Operation::MultiRepoBatch => {
+                return crate::multi_repo::dispatch(self, &request.operation, p).await;
             }
             _ => {}
         }
@@ -148,6 +273,50 @@ impl Service {
                 )
                 .await?,
             )?),
+            Operation::GitAction => {
+                let res = crate::git_actions::execute_action(root, p).await?;
+                Ok(res)
+            }
+            Operation::GitReflog => {
+                let limit = p["limit"].as_u64().unwrap_or(30) as u32;
+                let entries = crate::git_actions::reflog(root, limit).await?;
+                Ok(serde_json::to_value(entries)?)
+            }
+            Operation::CommitFiles => {
+                let sha = text(p, "sha")?;
+                let files = crate::git_actions::commit_files(root, sha).await?;
+                Ok(serde_json::to_value(files)?)
+            }
+            Operation::FileRead => {
+                let path = text(p, "path")?;
+                let file = crate::editor_service::file_read(root, path).await?;
+                Ok(serde_json::to_value(file)?)
+            }
+            Operation::FileWrite => {
+                let path = text(p, "path")?;
+                let content = text(p, "content")?;
+                crate::editor_service::file_write(root, path, content).await?;
+                Ok(json!({ "saved": true, "path": path }))
+            }
+            Operation::FileList => {
+                let files = crate::editor_service::file_list(root).await?;
+                Ok(serde_json::to_value(files)?)
+            }
+            Operation::ConflictList => {
+                let conflicts = crate::merge_service::conflict_list(root).await?;
+                Ok(serde_json::to_value(conflicts)?)
+            }
+            Operation::ConflictDetails => {
+                let path = text(p, "path")?;
+                let details = crate::merge_service::conflict_details(root, path).await?;
+                Ok(serde_json::to_value(details)?)
+            }
+            Operation::ResolveConflict => {
+                let path = text(p, "path")?;
+                let content = text(p, "content")?;
+                crate::merge_service::resolve_conflict(root, path, content).await?;
+                Ok(json!({ "resolved": true, "path": path }))
+            }
             Operation::Projects | Operation::Graph => {
                 let mut graph = self
                     .graph(&repo, p["refresh"].as_bool().unwrap_or(false))
@@ -172,17 +341,61 @@ impl Service {
                         .filter_map(|p| p.as_str().map(str::to_owned))
                         .collect()
                 } else {
-                    crate::git::snapshot(repo, 0)
+                    crate::git::snapshot(repo.clone(), 0)
                         .await?
                         .changes
                         .into_iter()
                         .map(|c| c.path)
                         .collect()
                 };
-                Ok(serde_json::to_value(worklens_core::impact(&graph, &paths))?)
+                let session = self.store.db.system();
+                let gstore =
+                    lilia_graph::GraphStore::new(session.graph(&format!("repo:{}", repo.id)));
+                if gstore.list_nodes(None, Some(1)).unwrap_or_default().is_empty() {
+                    for node in &graph.nodes {
+                        let metadata = serde_json::to_value(node).unwrap_or_default();
+                        let _ = gstore.set_node(&node.id, &node.kind, &metadata);
+                    }
+                    for edge in &graph.edges {
+                        let kind = format!("{:?}", edge.kind).to_lowercase();
+                        let _ = gstore.add_edge(&edge.source, &edge.target, &kind);
+                    }
+                }
+                let direct_ids: Vec<String> = graph
+                    .nodes
+                    .iter()
+                    .filter(|n| {
+                        !n.external
+                            && paths.iter().any(|p| {
+                                n.root.is_empty()
+                                    || n.root == "."
+                                    || p == &n.root
+                                    || p.starts_with(&format!("{}/", n.root))
+                            })
+                    })
+                    .map(|n| n.id.clone())
+                    .collect();
+                let impact = if let Ok(analysis) = gstore.impact_analysis(&direct_ids) {
+                    Impact {
+                        direct: analysis.direct,
+                        dependants: analysis.dependants,
+                        warning: "Dependency reachability is an impact estimate, not proof of sufficient validation.".into(),
+                    }
+                } else {
+                    worklens_core::impact(&graph, &paths)
+                };
+                Ok(serde_json::to_value(impact)?)
             }
             Operation::PrImpact => crate::service_impact::collect(self, &repo, p).await,
+            Operation::ValidateBoundaries
+            | Operation::GithubPublishChecks
+            | Operation::GithubDispatchWorkflow
+            | Operation::GithubPostImpactComment => {
+                crate::service_github_ext::handle(self, &repo, &request.operation, p).await
+            }
             Operation::Validations => crate::service_validations::collect(self, &repo, p).await,
+            Operation::FolderSizes => crate::folder_sizes::scan(root, p).await,
+            Operation::CloudScan => crate::service_cloud::dispatch(self, &repo, p).await,
             Operation::Documents => Ok(serde_json::to_value(crate::documents::list(root).await?)?),
             Operation::Document => Ok(
                 json!({ "path": text(p, "path")?, "text": crate::documents::read(root, text(p, "path")?).await?, "provenance": Provenance::observed("repository documentation") }),

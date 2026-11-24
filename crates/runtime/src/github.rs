@@ -24,6 +24,9 @@ mod tests;
 #[cfg(test)]
 #[path = "github_validations.tests.rs"]
 mod validation_tests;
+#[cfg(test)]
+#[path = "github_ext.tests.rs"]
+mod ext_tests;
 pub struct Github {
     api_base: String,
     #[cfg(test)]
@@ -76,6 +79,12 @@ impl Github {
         #[cfg(test)]
         if let Some(token) = &self.test_token {
             return Ok(token.clone());
+        }
+        if let Ok(token) = std::env::var("GITHUB_TOKEN") {
+            let trimmed = token.trim();
+            if !trimmed.is_empty() {
+                return Ok(trimmed.to_string());
+            }
         }
         crate::github_auth::token()
     }
@@ -190,6 +199,41 @@ impl Github {
                 data: data.clone(),
             },
         );
+        Ok(data)
+    }
+
+    pub async fn post(&self, endpoint: &str, body: &Value) -> Result<Value> {
+        self.send_json(reqwest::Method::POST, endpoint, body).await
+    }
+
+    pub async fn patch(&self, endpoint: &str, body: &Value) -> Result<Value> {
+        self.send_json(reqwest::Method::PATCH, endpoint, body).await
+    }
+
+    async fn send_json(&self, method: reqwest::Method, endpoint: &str, body: &Value) -> Result<Value> {
+        let token = self.credential()?;
+        let response = self
+            .client
+            .request(method, format!("{}{endpoint}", self.api_base))
+            .timeout(Duration::from_secs(25))
+            .bearer_auth(token)
+            .header("Accept", "application/vnd.github+json")
+            .header("X-GitHub-Api-Version", "2022-11-28")
+            .json(body)
+            .send()
+            .await?;
+        let status = response.status();
+        if status.as_u16() == 401 {
+            return Err(error("GitHub authorization expired; reconnect in Settings"));
+        }
+        if !status.is_success() {
+            let text = response.text().await.unwrap_or_default();
+            return Err(error(format!("GitHub returned {status}: {text}")));
+        }
+        if status == reqwest::StatusCode::NO_CONTENT {
+            return Ok(json!({ "success": true }));
+        }
+        let data: Value = response.json().await.unwrap_or(json!({ "success": true }));
         Ok(data)
     }
 

@@ -47,7 +47,7 @@ export function NxTrustNotice({ graph }: { graph?: Graph }) {
   return (
     <section
       aria-label="Nx repository trust"
-      className="mb-5 rounded-xl border border-blue-200 bg-blue-50/60 p-4"
+      className="mb-5 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 p-4"
     >
       <div className="flex flex-wrap items-center gap-4">
         <ShieldCheck className="size-5 shrink-0 text-primary" />

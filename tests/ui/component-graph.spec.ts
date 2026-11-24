@@ -55,7 +55,10 @@ test('cross-tool modules merge while filters, evidence and Nx targets retain the
     };
   });
   await page.getByRole('button', { name: 'Back to project' }).click();
-  await page.getByRole('link', { name: 'Architecture', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Architecture', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Refresh graph', exact: true }).click();
   await expect(page.getByText('2 modules · 1 links', { exact: true })).toBeVisible();
   await expect(page.locator('.react-flow__node')).toHaveCount(2);

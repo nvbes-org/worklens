@@ -49,7 +49,7 @@ function InspectorDetails({
       ) : (
         <>
           <div className="mb-5 flex items-center justify-between">
-            <span className="rounded-lg bg-blue-50 p-2 text-primary">
+            <span className="rounded-lg bg-blue-50 dark:bg-blue-950/50 p-2 text-primary">
               <Box className="size-5" />
             </span>
             <Button variant="ghost" size="sm" onClick={() => onSelect(null)}>

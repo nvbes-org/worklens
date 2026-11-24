@@ -285,7 +285,7 @@ async fn invalid_decision_fields_never_write_an_event() {
 }
 
 #[tokio::test]
-async fn schema_three_items_upgrade_without_losing_prior_data() {
+async fn schema_items_without_decisions_default_cleanly() {
     let root = repo();
     let data = tempfile::tempdir().unwrap();
     let path = data.path().join("db");
@@ -294,7 +294,7 @@ async fn schema_three_items_upgrade_without_losing_prior_data() {
     drop(service);
     let db = rusqlite::Connection::open(&path).unwrap();
     db.execute_batch(
-        "UPDATE work_items SET value=json_remove(value,'$.decisions'); PRAGMA user_version=3;",
+        "UPDATE _lilia_json SET value=json_remove(value,'$.decisions') WHERE space='work_items';",
     )
     .unwrap();
     let service = Service::new(&path).unwrap();
@@ -308,9 +308,4 @@ async fn schema_three_items_upgrade_without_losing_prior_data() {
     assert_eq!(shown.data["item"]["decisions"], json!([]));
     assert_eq!(shown.data["item"]["title"], "Decision test");
     assert_eq!(shown.data["events"].as_array().unwrap().len(), 1);
-    assert_eq!(
-        db.query_row("PRAGMA user_version", [], |r| r.get::<_, u32>(0))
-            .unwrap(),
-        4
-    );
 }

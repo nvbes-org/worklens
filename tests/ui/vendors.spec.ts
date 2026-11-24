@@ -51,7 +51,10 @@ test('external dependencies and opt-in vendor parsing have distinct filters and 
       return response;
     };
   });
-  await page.getByRole('link', { name: 'Architecture', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Architecture', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Refresh graph', exact: true }).click();
   await expect(page.getByLabel('Component categories')).toContainText('Packages');
   await expect(page.getByLabel('Component categories')).toContainText('Dependencies / vendors');

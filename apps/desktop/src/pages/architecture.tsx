@@ -176,7 +176,7 @@ export function ArchitecturePage() {
         />
         <select
           aria-label="Ecosystem"
-          className="h-8 rounded-md border bg-white px-2 text-xs"
+          className="h-8 rounded-md border border-input bg-background text-foreground px-2 text-xs"
           value={ecosystem}
           onChange={(e) => setEcosystem(e.target.value)}
         >
@@ -188,7 +188,7 @@ export function ArchitecturePage() {
         </select>
         <select
           aria-label="Package scope"
-          className="h-8 rounded-md border bg-white px-2 text-xs"
+          className="h-8 rounded-md border border-input bg-background text-foreground px-2 text-xs"
           value={scope}
           onChange={(e) => setScope(e.target.value)}
         >
@@ -234,19 +234,9 @@ export function ArchitecturePage() {
               </Empty>
             </div>
           ) : mode === 'graph' ? (
-            <ReactFlow
-              nodes={layout.map((node) => ({ ...node, selected: node.id === selectedId }))}
-              edges={flowEdges}
-              fitView
-              fitViewOptions={{ padding: 0.22 }}
-              nodesConnectable={false}
-              nodesDraggable={false}
-              deleteKeyCode={null}
-              minZoom={0.05}
-              maxZoom={1.8}
-              key={`${filter}:${ecosystem}:${scope}:${layout.map((node) => node.id).join(',')}`}
-              onNodeClick={(_, node) => setSelectedId(node.id)}
-              onPaneClick={() => setSelectedId(null)}
+            <section
+              className="h-full w-full"
+              aria-label="Architecture graph canvas"
               onKeyDown={(event) => {
                 if (!(event.target instanceof Element)) return;
                 const id = event.target.closest<HTMLElement>('.react-flow__node')?.dataset.id;
@@ -256,22 +246,37 @@ export function ArchitecturePage() {
                   setSelectedId(id);
                 } else if (event.key === 'Escape') setSelectedId(null);
               }}
-              onEdgeClick={(_, edge) => {
-                const selectedEdge = edges[Number(edge.id)];
-                if (selectedEdge) setRelation(selectedEdge.origin);
-              }}
             >
-              <Background color="#dedee5" gap={20} size={1} />
-              <Controls showInteractive={false} />
-            </ReactFlow>
+              <ReactFlow
+                nodes={layout.map((node) => ({ ...node, selected: node.id === selectedId }))}
+                edges={flowEdges}
+                fitView
+                fitViewOptions={{ padding: 0.22 }}
+                nodesConnectable={false}
+                nodesDraggable={false}
+                deleteKeyCode={null}
+                minZoom={0.05}
+                maxZoom={1.8}
+                key={`${filter}:${ecosystem}:${scope}:${layout.map((node) => node.id).join(',')}`}
+                onNodeClick={(_, node) => setSelectedId(node.id)}
+                onPaneClick={() => setSelectedId(null)}
+                onEdgeClick={(_, edge) => {
+                  const selectedEdge = edges[Number(edge.id)];
+                  if (selectedEdge) setRelation(selectedEdge.origin);
+                }}
+              >
+                <Background color="#dedee5" gap={20} size={1} />
+                <Controls showInteractive={false} />
+              </ReactFlow>
+            </section>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-border">
               {nodes.map((node) => (
                 <button
                   key={node.id}
                   type="button"
                   onClick={() => setSelectedId(node.id)}
-                  className={`flex w-full items-center justify-between gap-3 p-4 text-left text-sm ${node.id === selectedId ? 'bg-accent' : 'hover:bg-white'}`}
+                  className={`flex w-full items-center justify-between gap-3 p-4 text-left text-sm ${node.id === selectedId ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/60'}`}
                 >
                   <span className="min-w-0">
                     <span className="block font-medium">{node.name}</span>

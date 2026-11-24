@@ -20,7 +20,12 @@ export function ComponentMetadata({ project }: { project: ComponentProject }) {
     base,
     head,
   };
-  const { data, error, isFetching: busy, refetch } = useQuery({
+  const {
+    data,
+    error,
+    isFetching: busy,
+    refetch,
+  } = useQuery({
     queryKey: ['component_metadata', repo?.path, params],
     queryFn: () => query<Metadata>('component_metadata', repo?.path, params),
     enabled: Boolean(repo),

@@ -1,4 +1,4 @@
-use crate::{Result, error, paths::data_dir, service::Service};
+use crate::{error, paths::data_dir, service::Service, Result};
 use fs2::FileExt;
 use std::{
     os::unix::{
@@ -35,7 +35,27 @@ pub async fn serve() -> Result<()> {
     }
     let listener = UnixListener::bind(&socket)?;
     std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600))?;
-    let service = Arc::new(Service::new(&data.join("worklens.sqlite3"))?);
+    let meta_path = data.join("service.meta");
+    let current_mtime = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.metadata().ok())
+        .and_then(|m| m.modified().ok())
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let meta = serde_json::json!({
+        "pid": std::process::id(),
+        "mtime": current_mtime,
+        "version": worklens_core::PROTOCOL_VERSION,
+    });
+    let _ = std::fs::write(&meta_path, meta.to_string());
+
+    let service = Arc::new(Service::new(&data.join("worklens.lilia"))?);
+    service.transports.set_service(Arc::downgrade(&service));
+    if let Ok(active_profile) = service.db().and_then(|db| db.get_active_config_profile()) {
+        let profile = active_profile.clone();
+        let _ = service.transports.reconfigure(&profile).await;
+    }
     let semaphore = Arc::new(tokio::sync::Semaphore::new(16));
     loop {
         let (stream, _) = listener.accept().await?;
@@ -62,7 +82,7 @@ async fn handle(stream: UnixStream, service: Arc<Service>) -> Result<()> {
     }
     let response = match serde_json::from_slice::<Request>(&bytes) {
         Ok(request) => service.request(request).await,
-        Err(_) => Response::failure("Invalid request"),
+        Err(e) => Response::failure(format!("Invalid request: {e}")),
     };
     write.write_all(&serde_json::to_vec(&response)?).await?;
     write.write_all(b"\n").await?;
@@ -111,10 +131,53 @@ async fn connect_or_start(
 }
 
 pub async fn ensure(binary: &Path) -> Result<()> {
-    let socket = data_dir()?.join("service.sock");
+    let data = data_dir()?;
+    let socket = data.join("service.sock");
+    let meta_path = data.join("service.meta");
+
     if UnixStream::connect(&socket).await.is_ok() {
-        return Ok(());
+        let is_stale = if let Ok(content) = std::fs::read_to_string(&meta_path) {
+            if let Ok(meta) = serde_json::from_str::<serde_json::Value>(&content) {
+                let meta_mtime = meta["mtime"].as_u64().unwrap_or(0);
+                let meta_version = meta["version"].as_u64().unwrap_or(0);
+                let bin_mtime = binary
+                    .metadata()
+                    .ok()
+                    .and_then(|m| m.modified().ok())
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                meta_version != worklens_core::PROTOCOL_VERSION as u64
+                    || (bin_mtime > 0 && meta_mtime > 0 && bin_mtime > meta_mtime + 2)
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        if !is_stale {
+            return Ok(());
+        }
+
+        if let Ok(content) = std::fs::read_to_string(&meta_path) {
+            if let Ok(meta) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(pid) = meta["pid"].as_u64() {
+                    let _ = std::process::Command::new("kill")
+                        .args(["-TERM", &pid.to_string()])
+                        .status();
+                    for _ in 0..10 {
+                        tokio::time::sleep(Duration::from_millis(50)).await;
+                        if UnixStream::connect(&socket).await.is_err() {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        let _ = std::fs::remove_file(&socket);
     }
+
     std::process::Command::new(binary)
         .arg("serve")
         .process_group(0)

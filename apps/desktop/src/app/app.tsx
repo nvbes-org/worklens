@@ -3,8 +3,10 @@ import { createRootRoute, createRoute, createRouter, RouterProvider } from '@tan
 import { Suspense } from 'react';
 import { Shell } from '../components/shell';
 import { TooltipProvider } from '../components/ui/tooltip';
+import { NativeWindowView, WindowManagerProvider } from '../components/window-manager';
 import { PreferencesProvider } from '../lib/preferences';
 import { SessionProvider } from '../lib/session';
+import { useWindowDrag } from '../lib/window';
 
 const rootRoute = createRootRoute({ component: Shell });
 const viewRoute = createRoute({
@@ -26,14 +28,24 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, staleTime: 15_000, refetchOnWindowFocus: true } },
 });
 export default function App() {
+  useWindowDrag();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const detachedWindowId = searchParams?.get('detachedWindowId');
+
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <PreferencesProvider>
           <TooltipProvider>
-            <Suspense fallback={<p className="p-8 text-sm">Loading view…</p>}>
-              <RouterProvider router={router} />
-            </Suspense>
+            <WindowManagerProvider>
+              {detachedWindowId ? (
+                <NativeWindowView windowId={detachedWindowId} />
+              ) : (
+                <Suspense fallback={<p className="p-8 text-sm">Loading view…</p>}>
+                  <RouterProvider router={router} />
+                </Suspense>
+              )}
+            </WindowManagerProvider>
           </TooltipProvider>
         </PreferencesProvider>
       </SessionProvider>

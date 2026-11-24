@@ -1,4 +1,4 @@
-use crate::{Result, error, service::Service};
+use crate::{error, service::Service, Result};
 use serde_json::Value;
 use worklens_core::*;
 

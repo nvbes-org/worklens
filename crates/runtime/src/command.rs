@@ -3,6 +3,34 @@ use std::{path::Path, process::Stdio, time::Duration};
 use tokio::{io::AsyncReadExt, process::Command};
 
 pub async fn run(root: &Path, program: &str, args: &[&str]) -> Result<Vec<u8>> {
+    run_with_stdin(root, program, args, None).await
+}
+
+pub async fn run_with_env(
+    root: &Path,
+    program: &str,
+    args: &[&str],
+    envs: &[(&str, &str)],
+) -> Result<Vec<u8>> {
+    run_full(root, program, args, None, envs).await
+}
+
+pub async fn run_with_stdin(
+    root: &Path,
+    program: &str,
+    args: &[&str],
+    input: Option<&[u8]>,
+) -> Result<Vec<u8>> {
+    run_full(root, program, args, input, &[]).await
+}
+
+pub async fn run_full(
+    root: &Path,
+    program: &str,
+    args: &[&str],
+    input: Option<&[u8]>,
+    envs: &[(&str, &str)],
+) -> Result<Vec<u8>> {
     // Finder launches do not inherit the interactive shell's PATH. Append only
     // conventional user/toolchain locations; never source shell startup scripts.
     let mut search: Vec<_> =
@@ -17,8 +45,8 @@ pub async fn run(root: &Path, program: &str, args: &[&str]) -> Result<Vec<u8>> {
     }
     let executable_path =
         std::env::join_paths(search).map_err(|_| error("Invalid executable search path"))?;
-    let mut child = Command::new(program)
-        .args(args)
+    let mut cmd = Command::new(program);
+    cmd.args(args)
         .current_dir(root)
         .env("PATH", executable_path)
         .env("GIT_OPTIONAL_LOCKS", "0")
@@ -27,6 +55,7 @@ pub async fn run(root: &Path, program: &str, args: &[&str]) -> Result<Vec<u8>> {
         .env("COREPACK_ENABLE_NETWORK", "0")
         .env("COREPACK_ENABLE_DOWNLOAD_PROMPT", "0")
         .env("npm_config_manage_package_manager_versions", "false")
+        .env("pnpm_config_manage_package_manager_versions", "false")
         .env("NX_DAEMON", "false")
         .env("NX_INTERACTIVE", "false")
         .env("NX_NO_CLOUD", "true")
@@ -41,11 +70,22 @@ pub async fn run(root: &Path, program: &str, args: &[&str]) -> Result<Vec<u8>> {
             "NX_CACHE_DIRECTORY",
             crate::paths::data_dir()?.join("nx-cache"),
         )
-        .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()?;
+        .kill_on_drop(true);
+
+    for (k, v) in envs {
+        cmd.env(k, v);
+    }
+
+    if input.is_some() {
+        cmd.stdin(Stdio::piped());
+    } else {
+        cmd.stdin(Stdio::null());
+    }
+
+    let mut child = cmd.spawn()?;
+    let stdin = child.stdin.take();
     let stdout = child
         .stdout
         .take()
@@ -55,6 +95,15 @@ pub async fn run(root: &Path, program: &str, args: &[&str]) -> Result<Vec<u8>> {
         .take()
         .ok_or_else(|| error("Missing command stderr"))?;
     tokio::time::timeout(Duration::from_secs(90), async {
+        let write_in = async {
+            if let (Some(mut s), Some(data)) = (stdin, input) {
+                use tokio::io::AsyncWriteExt;
+                s.write_all(data).await?;
+                s.flush().await?;
+                drop(s);
+            }
+            Ok::<_, std::io::Error>(())
+        };
         let out = async {
             let mut v = Vec::new();
             stdout.take(16_000_001).read_to_end(&mut v).await?;
@@ -65,7 +114,7 @@ pub async fn run(root: &Path, program: &str, args: &[&str]) -> Result<Vec<u8>> {
             stderr.take(1_000_001).read_to_end(&mut v).await?;
             Ok::<_, std::io::Error>(v)
         };
-        let (out, err) = tokio::try_join!(out, err)?;
+        let (_, out, err) = tokio::try_join!(write_in, out, err)?;
         // Stop rather than deadlock waiting on a producer exceeding either pipe limit.
         if out.len() > 16_000_000 || err.len() > 1_000_000 {
             child.kill().await?;
@@ -73,10 +122,20 @@ pub async fn run(root: &Path, program: &str, args: &[&str]) -> Result<Vec<u8>> {
         }
         let status = child.wait().await?;
         if !status.success() {
-            return Err(error(format!(
+            let message = format!(
                 "{program} failed ({}): {}",
                 status,
                 String::from_utf8_lossy(&err)
+                    .chars()
+                    .take(1500)
+                    .collect::<String>()
+            );
+            if out.is_empty() {
+                return Err(error(message));
+            }
+            return Err(error(format!(
+                "{message}\nstdout: {}",
+                String::from_utf8_lossy(&out)
                     .chars()
                     .take(1500)
                     .collect::<String>()
@@ -98,4 +157,28 @@ pub async fn git(root: &Path, args: &[&str]) -> Result<String> {
     ];
     safe.extend_from_slice(args);
     Ok(String::from_utf8_lossy(&run(root, "git", &safe).await?).into_owned())
+}
+
+pub async fn git_with_stdin(root: &Path, args: &[&str], input: &[u8]) -> Result<String> {
+    let mut safe = vec![
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.quotePath=false",
+        "--no-pager",
+    ];
+    safe.extend_from_slice(args);
+    Ok(String::from_utf8_lossy(&run_with_stdin(root, "git", &safe, Some(input)).await?).into_owned())
+}
+
+pub async fn git_with_env(root: &Path, args: &[&str], envs: &[(&str, &str)]) -> Result<String> {
+    let mut safe = vec![
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.quotePath=false",
+        "--no-pager",
+    ];
+    safe.extend_from_slice(args);
+    Ok(String::from_utf8_lossy(&run_with_env(root, "git", &safe, envs).await?).into_owned())
 }

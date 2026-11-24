@@ -74,7 +74,7 @@ async fn confirmed_sources_use_cached_projects_and_scoped_agent_and_worktree_dat
     assert_eq!(records[2]["data"]["path"], opened.data["path"]);
     assert!(records[2]["data"].get("remotes").is_none());
     let db = rusqlite::Connection::open(data.path().join("db")).unwrap();
-    db.execute("DELETE FROM cache", []).unwrap();
+    db.execute("DELETE FROM _lilia_kv WHERE namespace = 'cache'", []).unwrap();
     let unavailable = call(
         &service,
         root.path(),
@@ -87,7 +87,7 @@ async fn confirmed_sources_use_cached_projects_and_scoped_agent_and_worktree_dat
         "unavailable"
     );
     assert_eq!(
-        db.query_row("SELECT count(*) FROM cache", [], |r| r.get::<_, u32>(0))
+        db.query_row("SELECT count(*) FROM _lilia_kv WHERE namespace = 'cache'", [], |r| r.get::<_, u32>(0))
             .unwrap(),
         0
     );
@@ -209,7 +209,7 @@ async fn context_documents_are_confined_partial_and_not_persisted() {
     assert!(!exported.data.to_string().contains("EXCLUDED_SECRET"));
     let db = rusqlite::Connection::open(data.path().join("db")).unwrap();
     assert_eq!(
-        db.query_row("SELECT count(*) FROM cache", [], |r| r.get::<_, u32>(0))
+        db.query_row("SELECT count(*) FROM _lilia_kv WHERE namespace = 'cache'", [], |r| r.get::<_, u32>(0))
             .unwrap(),
         0
     );

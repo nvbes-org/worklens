@@ -32,8 +32,10 @@ test('Overview displays repository activity and components, and navigates to Arc
   await expect(page.getByRole('heading', { name: 'core', exact: true })).toBeVisible();
   await expect(page.getByText('libs/core/Cargo.toml', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.getByLabel('Component inspector')).toHaveCount(0);
   await expect(page.locator('.react-flow__node')).not.toHaveClass(/selected/);
-  await page.locator('.react-flow__node').press('Enter');
+  await page.locator('.react-flow__node').evaluate((el) => (el as HTMLElement).focus());
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'core', exact: true })).toBeVisible();
 
   expect(failures).toEqual([]);

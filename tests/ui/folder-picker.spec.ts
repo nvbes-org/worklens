@@ -79,3 +79,62 @@ test('repository connection failure appears once and clears after recovery', asy
   await expect(page.getByRole('heading', { name: 'fixture', exact: true })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
+
+test('recent workspaces with long names truncate and show tooltip on hover', async ({ page }) => {
+  await page.addInitScript(() => {
+    Reflect.set(window, '__RECENT_OVERRIDE__', [
+      { name: 'nvbes', path: '/Users/shayn/Development/nvbes' },
+      { name: 'nvbes', path: '/Users/shayn/.codex/worktrees/1146/nvbes' },
+      {
+        name: 'frontend_experience_audit_suite_very_long_project_name_exceeding_max_width',
+        path: '/Users/shayn/.gemini/antigravity/worktrees/nvbes/frontend_experience_audit_suite',
+      },
+      {
+        name: 'trust-risk-service-v0',
+        path: '/Users/shayn/.config/superpowers/worktrees/nvbes/trust-risk-service-v0',
+      },
+      { name: 'worklens', path: '/Users/shayn/Development/worklens' },
+    ]);
+  });
+  await picker(page, null);
+  await expect(page.getByRole('heading', { name: 'See the whole picture.' })).toBeVisible();
+  await expect(page.getByText('Recent workspaces')).toBeVisible();
+
+  const row = page.getByRole('button', { name: /frontend_experience_audit_suite/ });
+  await expect(row).toBeVisible();
+  await row.hover();
+  const tooltip = page.getByRole('tooltip');
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText(
+    'frontend_experience_audit_suite_very_long_project_name_exceeding_max_width',
+  );
+});
+
+test('live file watching reacts to file change event and displays live tracking status', async ({ page }) => {
+  await seed(page);
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Git', exact: true })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Your working tree' })).toBeVisible();
+  await expect(page.getByText('Live tracking')).toBeVisible();
+
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent('worklens:file-change', {
+        detail: [
+          {
+            path: '/fixture/src/new-feature.rs',
+            relativePath: 'src/new-feature.rs',
+            kind: 'created',
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      }),
+    );
+  });
+
+  const badge = page.getByText('Live tracking');
+  await expect(badge).toBeVisible();
+  await expect(badge).toHaveAttribute('title', /src\/new-feature\.rs/);
+});

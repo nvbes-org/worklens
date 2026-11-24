@@ -7,7 +7,7 @@ export function SearchResults({ value }: { value: unknown }) {
   const data = record(value);
   const { repo } = useSession();
   return (
-    <div className="divide-y rounded-lg border bg-white">
+    <div className="divide-y divide-border rounded-lg border border-border bg-card text-card-foreground">
       <p className="p-3 text-xs text-muted-foreground">{str(data.scope)}</p>
       {[
         { key: 'projects', view: 'architecture' },

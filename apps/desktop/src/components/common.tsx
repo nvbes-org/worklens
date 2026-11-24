@@ -29,7 +29,7 @@ export function ErrorNotice({ error }: { error: unknown }) {
   return (
     <div
       role="alert"
-      className="my-4 flex gap-3 rounded-lg border border-amber-500/30 bg-amber-50 p-4 text-sm text-amber-900"
+      className="my-4 flex gap-3 rounded-lg border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 p-4 text-sm text-amber-900 dark:text-amber-200"
     >
       <AlertCircle className="size-4 shrink-0 mt-0.5" />
       <span>{error instanceof Error ? error.message : String(error)}</span>
@@ -46,8 +46,8 @@ export function Loading() {
 }
 export function Empty({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed px-8 py-12 text-center">
-      <h3 className="font-medium">{title}</h3>
+    <div className="rounded-xl border border-dashed border-border px-8 py-12 text-center">
+      <h3 className="font-medium text-foreground">{title}</h3>
       <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{children}</p>
     </div>
   );

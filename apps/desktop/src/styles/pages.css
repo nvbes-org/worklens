@@ -340,7 +340,14 @@
 }
 .settings-header {
   grid-column: 1 / -1;
-  padding: 16px 24px;
+  padding: 16px 24px 16px 88px;
+  display: flex;
+  align-items: center;
+  -webkit-app-region: drag;
+}
+.settings-header button,
+.settings-header a {
+  -webkit-app-region: no-drag;
 }
 .settings-categories {
   padding: 42px 24px;
@@ -492,3 +499,272 @@
     padding: 16px;
   }
 }
+
+/* ==========================================================================
+   Page Dark Mode Overrides
+   ========================================================================== */
+
+/* Architecture Canvas & Inspector */
+:is(.dark, [data-theme="dark"]) .architecture-canvas,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .architecture-canvas {
+    background: #141518;
+    border-color: rgb(255 255 255 / 10%);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .architecture-canvas .react-flow__node-default,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .architecture-canvas .react-flow__node-default {
+    background: var(--component-bg, #1c1c20);
+    border-color: var(--component-border, rgb(255 255 255 / 12%));
+    box-shadow: 0 2px 8px rgb(0 0 0 / 40%);
+    color: #f4f4f5;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .architecture-canvas .react-flow__node-default.selected,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .architecture-canvas .react-flow__node-default.selected {
+    border-color: #3894ff;
+    box-shadow: 0 0 0 3px rgba(56, 148, 255, 0.25);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .architecture-canvas .react-flow__controls,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .architecture-canvas .react-flow__controls {
+    border-color: rgb(255 255 255 / 12%);
+    background: #202125;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 40%);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .architecture-canvas .react-flow__controls-button,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .architecture-canvas .react-flow__controls-button {
+    border-right-color: rgb(255 255 255 / 10%);
+    background: #202125;
+    fill: #d4d4d8;
+  }
+  :root:not([data-theme="light"]) .architecture-canvas .react-flow__controls-button:hover {
+    background: rgb(255 255 255 / 10%);
+    fill: #ffffff;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .architecture-canvas .react-flow__handle,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .architecture-canvas .react-flow__handle {
+    border-color: #1c1c20;
+    background: #71717a;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .component-inspector,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .component-inspector {
+    border-left-color: rgb(255 255 255 / 10%);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .inspector-relation,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .inspector-relation {
+    color: #a1a1aa;
+  }
+  :root:not([data-theme="light"]) .inspector-relation:hover {
+    color: #3894ff;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .view-segment,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .view-segment {
+    border-color: rgb(255 255 255 / 10%);
+    background: rgb(255 255 255 / 4%);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .graph-node-label small,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .graph-node-label small {
+    color: #a1a1aa;
+  }
+}
+
+/* Git Page */
+:is(.dark, [data-theme="dark"]) .conflict-banner,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .conflict-banner {
+    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) :is(.git-files, .history-list, .git-diff),
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.git-files, .history-list, .git-diff) {
+    border-color: rgb(255 255 255 / 10%);
+    background: #18191c;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .file-group h2,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .file-group h2 {
+    color: #a1a1aa;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) :is(.file-row:hover, .history-row:hover),
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.file-row:hover, .history-row:hover) {
+    background: rgb(255 255 255 / 5%);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) :is(.file-row.selected, .history-row.selected),
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.file-row.selected, .history-row.selected) {
+    background: rgba(56, 148, 255, 0.18);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .file-status,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .file-status {
+    color: #3894ff;
+  }
+  :root:not([data-theme="light"]) .file-status.conflicted {
+    color: #fbbf24;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .commit-composer,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .commit-composer {
+    border-top-color: rgb(255 255 255 / 10%);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .commit-composer textarea,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .commit-composer textarea {
+    border-color: rgb(255 255 255 / 12%);
+    background: #1f2024;
+    color: #f4f4f5;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .diff-heading,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .diff-heading {
+    border-bottom-color: rgb(255 255 255 / 10%);
+    background: #1e1f23;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .diff-line.added,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .diff-line.added {
+    background: rgba(34, 197, 94, 0.14);
+    color: #4ade80;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .diff-line.removed,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .diff-line.removed {
+    background: rgba(239, 68, 68, 0.14);
+    color: #f87171;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .diff-line.meta,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .diff-line.meta {
+    background: rgba(255, 255 255 / 0.04);
+    color: #a1a1aa;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .line-number,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .line-number {
+    color: #71717a;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .diff-footer,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .diff-footer {
+    border-top-color: rgb(255 255 255 / 10%);
+    color: #a1a1aa;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .history-row,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .history-row {
+    border-bottom-color: rgb(255 255 255 / 8%);
+  }
+}
+
+/* Settings Page */
+:is(.dark, [data-theme="dark"]) .settings-categories button,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .settings-categories button {
+    color: #a1a1aa;
+  }
+  :root:not([data-theme="light"]) .settings-categories button:hover {
+    background: rgb(255 255 255 / 6%);
+    color: #f4f4f5;
+  }
+  :root:not([data-theme="light"]) .settings-categories button.selected {
+    background: rgb(255 255 255 / 12%);
+    color: #ffffff;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .preference-group,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .preference-group {
+    border-color: rgb(255 255 255 / 10%);
+    background: rgb(28 28 32 / 60%);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .preference-row + .preference-row,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .preference-row + .preference-row {
+    border-top-color: rgb(255 255 255 / 8%);
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .preference-select,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .preference-select {
+    border-color: rgb(255 255 255 / 12%);
+    background: #222327;
+    color: #f4f4f5;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .preference-switch,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .preference-switch {
+    background: #3f3f46;
+  }
+}
+
+:is(.dark, [data-theme="dark"]) .shortcut-key,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shortcut-key {
+    border-color: rgb(255 255 255 / 12%);
+    background: #222327;
+    color: #d4d4d8;
+  }
+}
+

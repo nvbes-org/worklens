@@ -44,7 +44,10 @@ test('metadata loads on selection, refreshes and keeps Nx unknown without trust'
       return transport(request);
     };
   });
-  await page.getByRole('link', { name: 'Architecture', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Architecture', exact: true })
+    .click();
   await page.getByLabel('Filter components').fill('web');
   await expect(page.locator('.react-flow__node')).toHaveCount(1);
   await page.locator('.react-flow__node').click();

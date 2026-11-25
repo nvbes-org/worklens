@@ -4,11 +4,11 @@ use std::{
     path::Path,
     process::Command,
     sync::{
-        Arc,
         atomic::{AtomicUsize, Ordering},
+        Arc,
     },
 };
-use wiremock::{Mock, MockServer, ResponseTemplate, matchers::path};
+use wiremock::{matchers::path, Mock, MockServer, ResponseTemplate};
 use worklens_core::*;
 
 const URL: &str = "https://github.com/owner/repo/pull/1";
@@ -29,15 +29,13 @@ async fn setup(
     let server = MockServer::start().await;
     let root = tempfile::tempdir().unwrap();
     let data = tempfile::tempdir().unwrap();
-    assert!(
-        Command::new("git")
-            .args(["init", "-b", "main"])
-            .arg(root.path())
-            .output()
-            .unwrap()
-            .status
-            .success()
-    );
+    assert!(Command::new("git")
+        .args(["init", "-b", "main"])
+        .arg(root.path())
+        .output()
+        .unwrap()
+        .status
+        .success());
     let mut service = Service::new(&data.path().join("db")).unwrap();
     service.github = Github {
         api_base: server.uri(),
@@ -84,7 +82,7 @@ async fn evidence_is_opt_in_exact_sha_fork_aware_and_paginated() {
     let local = export(&service, root.path(), json!({"sections":["summary"]})).await;
     assert!(local.error.is_none());
     assert!(server.received_requests().await.unwrap().is_empty());
-    let result = export(&service, root.path(), json!({"prUrls":[URL]})).await;
+    let result = export(&service, root.path(), json!({ "prUrls": [URL] })).await;
     assert!(result.error.is_none(), "{:?}", result.error);
     let items = result.data["items"].as_array().unwrap();
     assert_eq!(
@@ -104,13 +102,11 @@ async fn evidence_is_opt_in_exact_sha_fork_aware_and_paginated() {
         .iter()
         .find(|i| i["kind"] == "pr_validations")
         .unwrap();
-    assert!(
-        validations["sources"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .all(|s| s["status"] == "available")
-    );
+    assert!(validations["sources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|s| s["status"] == "available"));
     assert!(!result.data.to_string().contains("PRIVATE PATCH"));
     assert!(!result.data.to_string().contains("fixture-token"));
     let count = server.received_requests().await.unwrap().len();
@@ -149,7 +145,7 @@ async fn changed_or_unverifiable_final_pr_withholds_only_remote_evidence() {
 #[tokio::test]
 async fn missing_checks_never_satisfy_the_dossier_expectations() {
     let (_server, root, _data, service) = setup(200, false, 403).await;
-    let result = export(&service, root.path(), json!({"prUrls":[URL]})).await;
+    let result = export(&service, root.path(), json!({ "prUrls": [URL] })).await;
     assert!(result.error.is_none());
     let summary = result.data["items"]
         .as_array()
@@ -169,12 +165,10 @@ async fn unlinked_unsafe_and_multiple_prs_reject_before_network_access() {
         json!(["https://evil.test/owner/repo/pull/1"]),
         json!([format!("{URL}?secret=yes")]),
     ] {
-        assert!(
-            export(&service, root.path(), json!({"prUrls":urls}))
-                .await
-                .error
-                .is_some()
-        );
+        assert!(export(&service, root.path(), json!({ "prUrls": urls }))
+            .await
+            .error
+            .is_some());
     }
     assert!(server.received_requests().await.unwrap().is_empty());
 }
@@ -202,7 +196,7 @@ async fn cached_graph_is_approximate_and_export_does_not_execute_workspace_tools
     let graph = json!({"nodes":[{"id":"local","name":"local","root":"src","kind":"library","ecosystem":"pnpm","manifest":"package.json","external":false,"targets":[],"features":[]}],"edges":[],"sources":[{"source":"fixture graph","collectedAt":"2026-09-10T10:00:00Z","status":"available","detail":null,"revision":"old"}]});
     let key = format!("graph:{}", opened.data["path"].as_str().unwrap());
     service.db().unwrap().put_cache(&key, &graph).unwrap();
-    let result = export(&service, root.path(), json!({"prUrls":[URL]})).await;
+    let result = export(&service, root.path(), json!({ "prUrls": [URL] })).await;
     assert!(result.error.is_none());
     let items = result.data["items"].as_array().unwrap();
     let direct = items

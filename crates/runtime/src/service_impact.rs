@@ -1,4 +1,4 @@
-use crate::{Result, error, service::Service};
+use crate::{error, service::Service, Result};
 use serde_json::Value;
 use std::time::Duration;
 use tokio::time::timeout;
@@ -30,6 +30,7 @@ pub async fn collect(service: &Service, repo: &Repository, p: &Value) -> Result<
     let graph = match timeout(Duration::from_secs(25), crate::catalog::collect(repo)).await {
         Ok(Ok(graph)) => graph,
         result => Graph {
+            components: vec![],
             nodes: Vec::new(),
             edges: Vec::new(),
             sources: vec![Provenance::unavailable(

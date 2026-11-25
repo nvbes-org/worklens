@@ -1,5 +1,5 @@
-use crate::{Result, error, service::Service};
-use serde_json::{Value, json};
+use crate::{error, service::Service, Result};
+use serde_json::{json, Value};
 use std::path::Path;
 use worklens_core::*;
 
@@ -102,7 +102,21 @@ pub async fn search(service: &Service, repo: &Repository, query: &str) -> Result
         })
         .take(30)
         .collect();
+    let notes: Vec<_> = service
+        .db()?
+        .db
+        .system()
+        .fts("work_notes")
+        .search(&query, 30)
+        .unwrap_or_default();
+    let logs: Vec<_> = service
+        .db()?
+        .db
+        .system()
+        .fts("process_logs")
+        .search(&query, 30)
+        .unwrap_or_default();
     Ok(
-        json!({ "projects": projects, "documents": documents, "agents": agents, "scope": "local project names, documentation paths and agent objectives" }),
+        json!({ "projects": projects, "documents": documents, "agents": agents, "notes": notes, "logs": logs, "scope": "local project names, documentation paths, agent objectives, notes, and process logs" }),
     )
 }

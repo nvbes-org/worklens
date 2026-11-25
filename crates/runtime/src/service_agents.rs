@@ -1,8 +1,9 @@
 use crate::{
-    Result, error,
-    service::{Service, text},
+    error,
+    service::{text, Service},
+    Result,
 };
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use worklens_core::*;
 
 pub async fn apply(

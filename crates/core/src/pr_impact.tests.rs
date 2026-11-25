@@ -27,6 +27,7 @@ fn edge(source: &str, target: &str, kind: RelationKind) -> Edge {
 #[test]
 fn rename_impacts_both_roots_and_explains_transitive_cycles() {
     let graph = Graph {
+        components: vec![],
         nodes: vec![
             project("old"),
             project("new"),
@@ -60,6 +61,7 @@ fn rename_impacts_both_roots_and_explains_transitive_cycles() {
 #[test]
 fn reports_unmatched_transversal_deleted_files_without_prefix_collisions() {
     let graph = Graph {
+        components: vec![],
         nodes: vec![project("core")],
         edges: vec![],
         sources: vec![],

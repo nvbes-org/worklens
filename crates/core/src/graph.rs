@@ -47,6 +47,16 @@ pub struct Graph {
     pub nodes: Vec<Project>,
     pub edges: Vec<Edge>,
     pub sources: Vec<Provenance>,
+    /// Presentation identities; raw nodes remain available for evidence and task queries.
+    #[serde(default)]
+    pub components: Vec<ComponentGroup>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct ComponentGroup {
+    pub id: String,
+    pub member_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

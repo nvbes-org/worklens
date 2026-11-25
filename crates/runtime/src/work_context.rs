@@ -1,10 +1,10 @@
 use crate::{
-    Result,
-    context_snapshot::{Snapshot, bounds},
+    context_snapshot::{bounds, Snapshot},
     error,
     service::Service,
+    Result,
 };
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use worklens_core::*;
 
 fn validate(selection: &WorkContextSelection, work: &WorkItem) -> Result<()> {

@@ -1,135 +1,272 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Bot, GitBranch, Layers } from 'lucide-react';
-import { Empty, ErrorNotice, PageTitle, Source } from '../components/common';
-import { DeliverySummary } from '../components/delivery-summary';
+import type { DiffResult, FolderSizeReport } from '@worklens/contracts';
+import {
+  ArrowRight,
+  Box,
+  Check,
+  CircleAlert,
+  FileCode2,
+  GitBranch,
+  GitCommitHorizontal,
+  HardDrive,
+} from 'lucide-react';
+import { useState } from 'react';
+import { Empty, ErrorNotice, Loading, Source } from '../components/common';
+import { FolderSizesDialog, formatBytes } from '../components/folder-sizes';
 import { Badge } from '../components/ui/badge';
-import { useAgents, useGit, useGraph, useSession } from '../lib/session';
+import { ViewHeading } from '../components/view-heading';
+import { query } from '../lib/api';
+import { diffStats, isConflict } from '../lib/git-status';
+import { useGit, useGraph, useSession } from '../lib/session';
 
 export function Overview() {
   const { repo } = useSession();
   const git = useGit();
   const graph = useGraph();
-  const agents = useAgents();
-  const active = agents.data?.filter((a) => !['completed', 'failed'].includes(a.state)) ?? [];
-  const metrics = [
-    {
-      title: 'Worktrees',
-      value: git.data?.worktrees.length,
-      icon: GitBranch,
-      detail: 'Parallel working directories',
-      view: 'git',
-    },
-    {
-      title: 'Local components',
-      value: graph.data?.nodes.filter((n) => !n.external).length,
-      icon: Layers,
-      detail: 'Projects, packages and crates',
-      view: 'architecture',
-    },
-    {
-      title: 'Declared tasks',
-      value: active.length,
-      icon: Bot,
-      detail: `${active.filter((a) => a.presence === 'recent').length} with recent presence`,
-      view: 'agents',
-    },
-  ];
+  const projects = graph.data?.nodes.filter((node) => !node.external) ?? [];
+  const conflicts = git.data?.changes.filter(isConflict) ?? [];
+  const changes = git.data?.changes.length ?? 0;
+
+  const [folderSizesOpen, setFolderSizesOpen] = useState(false);
+  const diff = useQuery({
+    queryKey: ['diff', repo?.path, 'summary', git.data?.head],
+    queryFn: () => query<DiffResult>('diff', repo?.path, git.data?.head ? { base: 'HEAD' } : {}),
+    enabled: Boolean(repo?.path && changes > 0),
+  });
+  const folderSizes = useQuery({
+    queryKey: ['folder_sizes', repo?.path, 'summary'],
+    queryFn: () => query<FolderSizeReport>('folder_sizes', repo?.path, { maxDepth: 2, includeHidden: true }),
+    enabled: Boolean(repo?.path),
+    staleTime: 60_000,
+  });
+  const stats = diff.data?.text ? diffStats(diff.data.text) : null;
+
   return (
     <>
-      <PageTitle
-        title="Workspace overview"
-        description={`A connected view of ${repo?.name}. Local facts first, delivery signals alongside.`}
-      />
-      <div className="mb-8 grid grid-cols-3 overflow-hidden rounded-xl border bg-white">
-        {metrics.map((m) => (
-          <Link
-            key={m.title}
-            to="/$view"
-            params={{ view: m.view }}
-            className="border-r p-6 last:border-r-0 hover:bg-muted/40"
-          >
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              {m.title}
-              <m.icon className="size-4" />
-            </div>
-            <div className="my-3 text-4xl font-medium tracking-tight">{m.value ?? '—'}</div>
-            <p className="text-xs text-muted-foreground">{m.detail}</p>
-          </Link>
-        ))}
-      </div>
-      <ErrorNotice error={git.error} />
-      <ErrorNotice error={graph.error} />
-      <ErrorNotice error={agents.error} />
-      <div className="grid grid-cols-[1.2fr_1fr] gap-8">
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Work in progress</h2>
-            <Link
-              to="/$view"
-              params={{ view: 'git' }}
-              className="flex items-center gap-1 text-xs text-muted-foreground"
+      <ViewHeading
+        section="Overview"
+        title={repo?.name ?? 'Your project'}
+        description={<span className="font-mono text-xs">{repo?.path}</span>}
+      >
+        <div className="flex items-center gap-2">
+          {stats && (stats.additions > 0 || stats.deletions > 0) && (
+            <span
+              className="flex items-center gap-1.5 rounded-full border border-border/80 bg-background/80 px-2.5 py-1 font-mono text-xs font-semibold shadow-2xs"
+              title={`${stats.additions} insertions, ${stats.deletions} deletions`}
             >
-              Explore Git
-              <ArrowRight className="size-3" />
-            </Link>
-          </div>
-          <div className="divide-y rounded-xl border bg-white">
-            {git.data?.worktrees.map((tree) => (
-              <div key={tree.id} className="p-4">
-                <div className="flex items-center gap-2">
-                  <GitBranch className="size-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{tree.branch ?? 'Detached HEAD'}</span>
-                  {tree.path === repo?.path && <Badge variant="secondary">current</Badge>}
-                </div>
-                <p className="mt-2 truncate pl-6 font-mono text-xs text-muted-foreground">{tree.path}</p>
+              <span className="text-emerald-600 dark:text-emerald-400">+{stats.additions}</span>
+              <span className="text-rose-600 dark:text-rose-400">−{stats.deletions}</span>
+            </span>
+          )}
+          <Badge variant="outline" className="gap-2 py-1.5">
+            <GitBranch className="size-3.5" />
+            {git.data?.branch ?? 'Detached HEAD'}
+          </Badge>
+        </div>
+      </ViewHeading>
+      <ErrorNotice error={git.error || graph.error} />
+      {git.isPending && <Loading />}
+      <div className="overview-grid">
+        <div className="overview-col-main">
+          <section className="overview-section">
+            <div className="section-heading">
+              <h2>Apps & packages</h2>
+              <Link to="/$view" params={{ view: 'architecture' }} className="section-link">
+                Explore architecture
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+            {graph.isPending ? (
+              <Loading />
+            ) : projects.length === 0 ? (
+              <Empty title="No components discovered">
+                Projects and crates appear after inspecting a repository.
+              </Empty>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-border bg-card/40">
+                <table className="project-table">
+                  <thead>
+                    <tr>
+                      <th>Component</th>
+                      <th>Location</th>
+                      <th>Type</th>
+                      <th>Dependencies</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects.slice(0, 6).map((node) => (
+                      <tr key={node.id}>
+                        <td>
+                          <Link
+                            to="/$view"
+                            params={{ view: 'architecture' }}
+                            className="flex items-center gap-3 font-medium text-foreground hover:text-primary"
+                          >
+                            <Box className="size-4 text-muted-foreground" />
+                            {node.name}
+                          </Link>
+                        </td>
+                        <td className="font-mono text-xs text-muted-foreground">{node.root || '.'}</td>
+                        <td>
+                          <Badge variant="secondary">
+                            {node.ecosystem} · {node.kind}
+                          </Badge>
+                        </td>
+                        <td className="text-muted-foreground">
+                          {graph.data?.edges.filter(
+                            (edge) => edge.source === node.id && edge.kind !== 'contains',
+                          ).length ?? 0}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {projects.length > 6 && (
+                  <Link
+                    to="/$view"
+                    params={{ view: 'architecture' }}
+                    className="block border-t border-border p-3 text-center text-xs text-primary hover:bg-accent/50"
+                  >
+                    View all {projects.length} components
+                  </Link>
+                )}
               </div>
-            ))}
-          </div>
-          {git.data && (
-            <div className="mt-4">
-              <Source source={git.data.provenance} />
-            </div>
-          )}
-        </section>
-        <section>
-          <h2 className="mb-4 font-semibold">Agent activity</h2>
-          {active.length === 0 ? (
-            <Empty title="No declared activity">
-              Agents appear when they report through Worklens CLI or MCP. Process detection is not used to
-              infer task progress.
-            </Empty>
-          ) : (
-            <div className="divide-y rounded-xl border bg-white">
-              {active.map((agent) => (
-                <div key={agent.id} className="p-4">
-                  <div className="flex justify-between">
-                    <span className="font-medium text-sm">{agent.tool}</span>
-                    <Badge variant="outline">{agent.state}</Badge>
+            )}
+          </section>
+        </div>
+        <div className="overview-col-side">
+          <section className="overview-section">
+            <h2 className="section-heading">Needs attention</h2>
+            <div className="attention-list">
+              {conflicts.length > 0 && (
+                <Link to="/$view" params={{ view: 'git' }} className="attention-row">
+                  <span className="attention-icon bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400">
+                    <CircleAlert className="size-[18px]" />
+                  </span>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">
+                      {conflicts.length} unresolved conflict{conflicts.length > 1 ? 's' : ''}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Review the files before your next commit.
+                    </p>
                   </div>
-                  <p className="mt-2 text-sm">{agent.objective}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">Presence: {agent.presence}</p>
-                </div>
-              ))}
+                  <ArrowRight className="size-4 text-muted-foreground" />
+                </Link>
+              )}
+              {git.data && (
+                <Link to="/$view" params={{ view: 'git' }} className="attention-row">
+                  <span className="attention-icon bg-blue-50 text-primary dark:bg-blue-950/60 dark:text-blue-400">
+                    {changes ? <FileCode2 className="size-[18px]" /> : <Check className="size-[18px]" />}
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">
+                        {changes
+                          ? `${changes} changed file${changes > 1 ? 's' : ''}`
+                          : 'Your working tree is clean'}
+                      </p>
+                      {stats && (stats.additions > 0 || stats.deletions > 0) && (
+                        <span className="font-mono text-xs font-semibold">
+                          <span className="text-emerald-600 dark:text-emerald-400">+{stats.additions}</span>{' '}
+                          <span className="text-rose-600 dark:text-rose-400">−{stats.deletions}</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {changes
+                        ? 'Review changes in your active worktree.'
+                        : 'Explore the history or continue in your editor.'}
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Open Git</span>
+                  <ArrowRight className="size-4 text-muted-foreground" />
+                </Link>
+              )}
             </div>
-          )}
-          <div className="mt-6 rounded-xl border bg-primary/5 p-5">
-            <h3 className="text-sm font-medium">Follow a change through delivery</h3>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Connect GitHub to trace pull requests to their exact checks, changed projects and local
-              worktrees.
-            </p>
-            <Link
-              to="/$view"
-              params={{ view: 'pull-requests' }}
-              className="mt-4 inline-flex items-center gap-2 text-sm font-medium"
+          </section>
+          <section className="overview-section">
+            <div className="section-heading">
+              <h2>Recent activity</h2>
+              <Link to="/$view" params={{ view: 'git' }} className="section-link">
+                View Git
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+            {git.data?.commits.length === 0 ? (
+              <Empty title="No commits yet">The repository history will appear here.</Empty>
+            ) : (
+              <div className="divide-y divide-border">
+                {git.data?.commits.slice(0, 3).map((commit) => (
+                  <div key={commit.sha} className="activity-row">
+                    <GitCommitHorizontal className="size-4 text-muted-foreground" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-medium text-foreground">{commit.subject}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {commit.author} · <span className="font-mono">{commit.sha.slice(0, 7)}</span>
+                      </p>
+                    </div>
+                    <time className="text-xs text-muted-foreground" dateTime={commit.date}>
+                      {new Date(commit.date).toLocaleDateString()}
+                    </time>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+          <section className="overview-section">
+            <div className="section-heading">
+              <h2>Storage & disk usage</h2>
+              <button
+                type="button"
+                onClick={() => setFolderSizesOpen(true)}
+                className="section-link bg-transparent border-0 cursor-pointer p-0"
+              >
+                Inspect sizes
+                <ArrowRight className="size-3.5" />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFolderSizesOpen(true)}
+              className="attention-row cursor-pointer text-left w-full border-0 bg-transparent p-0"
             >
-              Explore pull requests
-              <ArrowRight className="size-4" />
-            </Link>
-          </div>
-        </section>
+              <span className="attention-icon bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+                <HardDrive className="size-[18px]" />
+              </span>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">
+                    {folderSizes.data ? formatBytes(folderSizes.data.total_bytes) : 'Calculating...'}
+                  </p>
+                  {folderSizes.data && (
+                    <Badge
+                      variant="outline"
+                      className="font-mono text-[11px] py-0 text-emerald-600 dark:text-emerald-400"
+                    >
+                      ⚡ {Number(folderSizes.data.duration_ms)}ms
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {folderSizes.data
+                    ? `${Number(folderSizes.data.total_files).toLocaleString()} files across ${Number(folderSizes.data.total_dirs).toLocaleString()} folders.`
+                    : 'Scanning repository filesystem...'}
+                </p>
+              </div>
+              <span className="text-xs text-muted-foreground">Details</span>
+              <ArrowRight className="size-4 text-muted-foreground" />
+            </button>
+          </section>
+        </div>
       </div>
-      <DeliverySummary />
+      <FolderSizesDialog open={folderSizesOpen} onOpenChange={setFolderSizesOpen} />
+      {git.data && (
+        <footer className="mt-8 border-t pt-4">
+          <Source source={git.data.provenance} />
+        </footer>
+      )}
     </>
   );
 }

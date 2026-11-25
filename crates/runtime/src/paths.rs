@@ -1,4 +1,4 @@
-use crate::{Result, error};
+use crate::{error, Result};
 use std::{
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
@@ -24,8 +24,32 @@ pub fn confined(root: &Path, relative: &str) -> Result<PathBuf> {
     if Path::new(relative).is_absolute() {
         return Err(error("Expected a relative repository path"));
     }
-    let resolved = root.join(relative).canonicalize()?;
-    if !resolved.starts_with(root.canonicalize()?) {
+    let root_canon = root.canonicalize()?;
+    let candidate = root.join(relative);
+
+    let resolved = if candidate.exists() {
+        candidate.canonicalize()?
+    } else {
+        for comp in Path::new(relative).components() {
+            if matches!(comp, std::path::Component::ParentDir) {
+                return Err(error("Path escapes repository"));
+            }
+        }
+        let mut curr = candidate.as_path();
+        while let Some(parent) = curr.parent() {
+            if parent.exists() {
+                let parent_canon = parent.canonicalize()?;
+                if !parent_canon.starts_with(&root_canon) {
+                    return Err(error("Path escapes repository"));
+                }
+                break;
+            }
+            curr = parent;
+        }
+        root_canon.join(relative)
+    };
+
+    if !resolved.starts_with(&root_canon) {
         return Err(error("Path escapes repository"));
     }
     Ok(resolved)

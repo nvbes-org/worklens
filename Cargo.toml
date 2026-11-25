@@ -1,5 +1,18 @@
 [workspace]
-members = ["crates/core", "crates/runtime", "crates/cli", "apps/desktop/src-tauri"]
+members = [
+    "crates/core",
+    "crates/runtime",
+    "crates/cli",
+    "apps/desktop/src-tauri",
+    "crates/aurora-core",
+    "crates/aurora-blocks",
+    "crates/aurora-mux",
+    "crates/aurora-tools",
+    "crates/aurora-canvas",
+    "crates/aurora-render",
+    "crates/aurora-bridge",
+    "apps/aurora-term",
+]
 resolver = "2"
 
 [workspace.package]
@@ -17,6 +30,8 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 ts-rs = { version = "12", features = ["serde-json-impl"] }
 tempfile = "3"
+notify = "8"
+sysinfo = "0.33"
 
 [profile.release]
 lto = "thin"

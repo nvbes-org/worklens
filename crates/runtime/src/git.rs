@@ -83,7 +83,7 @@ pub fn parse_worktrees(output: &str) -> Vec<Worktree> {
 
 pub async fn snapshot(repo: Repository, offset: u32) -> Result<GitSnapshot> {
     let path = Path::new(&repo.path);
-    let (status, trees, refs, remote_names) = tokio::try_join!(
+    let (status, trees, refs, remote_names, tags_raw) = tokio::try_join!(
         git(
             path,
             &["status", "--porcelain=v1", "-z", "--untracked-files=normal"]
@@ -98,7 +98,15 @@ pub async fn snapshot(repo: Repository, offset: u32) -> Result<GitSnapshot> {
                 "refs/remotes"
             ]
         ),
-        git(path, &["remote"])
+        git(path, &["remote"]),
+        git(
+            path,
+            &[
+                "for-each-ref",
+                "--format=%(refname:strip=2)%00%(objectname)%00%(*objectname)",
+                "refs/tags"
+            ]
+        )
     )?;
     let head = git(path, &["rev-parse", "--verify", "HEAD"])
         .await
@@ -117,6 +125,23 @@ pub async fn snapshot(repo: Repository, offset: u32) -> Result<GitSnapshot> {
             url,
         });
     }
+    let tags = tags_raw
+        .lines()
+        .filter_map(|line| {
+            let cols: Vec<_> = line.split('\0').collect();
+            if cols.len() == 3 {
+                let name = cols[0].into();
+                let commit = if !cols[2].is_empty() {
+                    cols[2].into()
+                } else {
+                    cols[1].into()
+                };
+                Some(Tag { name, commit })
+            } else {
+                None
+            }
+        })
+        .collect();
     let branches = refs
         .lines()
         .filter_map(|line| {
@@ -139,20 +164,24 @@ pub async fn snapshot(repo: Repository, offset: u32) -> Result<GitSnapshot> {
                 "--topo-order",
                 "-51",
                 &skip,
-                "--format=%H%x00%P%x00%an%x00%aI%x00%s%x00",
+                "--format=%H%x00%P%x00%an%x00%ae%x00%aI%x00%s%x00%b%x00",
             ],
         )
         .await?
         .split('\0')
         .collect::<Vec<_>>()
-        .chunks(5)
-        .filter(|c| c.len() == 5)
+        .chunks(7)
+        .filter(|c| c.len() == 7)
         .map(|c| Commit {
             sha: c[0].trim().into(),
             parents: c[1].split_whitespace().map(str::to_owned).collect(),
             author: c[2].into(),
-            date: c[3].into(),
-            subject: c[4].into(),
+            author_email: c[3].into(),
+            date: c[4].into(),
+            subject: c[5].into(),
+            body: c[6].trim().into(),
+            signature_status: None,
+            signer: None,
         })
         .collect::<Vec<_>>()
     } else {
@@ -176,6 +205,7 @@ pub async fn snapshot(repo: Repository, offset: u32) -> Result<GitSnapshot> {
         changes: parse_status(&status),
         branches,
         remotes,
+        tags,
         worktrees: parse_worktrees(&trees),
         commits: commits.into_iter().take(50).collect(),
         next_offset,

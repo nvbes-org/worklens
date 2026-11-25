@@ -1,0 +1,17 @@
+[package]
+name = "aurora-tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+regex = "1"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = "3"

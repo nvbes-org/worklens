@@ -47,6 +47,7 @@ impl WorklensMcp {
             "status",
             "projects",
             "graph",
+            "component_metadata",
             "git",
             "diff",
             "impact",

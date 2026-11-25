@@ -42,6 +42,18 @@ export async function openSource(repository: string, path: string, editor = fals
   await invoke('open_source', { repository, path, editor });
 }
 
+export async function watchRepository(path: string): Promise<void> {
+  if (isTauri()) {
+    await invoke('watch_repository', { path });
+  }
+}
+
+export async function unwatchRepository(): Promise<void> {
+  if (isTauri()) {
+    await invoke('unwatch_repository');
+  }
+}
+
 export function record(value: unknown): Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)

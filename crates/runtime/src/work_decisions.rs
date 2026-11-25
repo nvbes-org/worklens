@@ -1,4 +1,4 @@
-use crate::{Result, error};
+use crate::{error, Result};
 use worklens_core::{Decision, DecisionResolution, WorkChange, WorkItem, WorkMutation};
 
 fn text(value: &str, max: usize) -> Result<()> {

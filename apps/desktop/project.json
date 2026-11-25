@@ -1,0 +1,16 @@
+{
+  "name": "desktop",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/desktop/src",
+  "projectType": "application",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project desktop --web",
+  "targets": {
+    "check": { "inputs": ["desktopSources"], "command": "pnpm exec tsc -p apps/desktop/tsconfig.app.json --noEmit" },
+    "test": { "inputs": ["desktopSources"], "command": "pnpm exec playwright test" },
+    "lint": { "inputs": ["desktopSources"], "command": "pnpm exec biome check apps/desktop/src apps/desktop/vite.config.mts" },
+    "dev": { "command": "pnpm exec tauri dev", "options": { "cwd": "apps/desktop" }, "continuous": true, "cache": false },
+    "web": { "command": "pnpm exec vite --host 127.0.0.1 --port 1420", "options": { "cwd": "apps/desktop" }, "continuous": true, "cache": false },
+    "bundle": { "command": "pnpm exec tauri build", "options": { "cwd": "apps/desktop" }, "dependsOn": [{ "projects": ["engine"], "target": "build" }], "cache": false }
+  }
+}

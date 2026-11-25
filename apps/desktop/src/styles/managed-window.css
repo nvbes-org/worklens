@@ -1,0 +1,25 @@
+/* Managed Window System Styles */
+.managed-window-floating {
+  box-shadow:
+    0 20px 45px -10px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.managed-window-docked {
+  box-shadow:
+    0 2px 8px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.window-header {
+  cursor: grab;
+}
+
+.window-header:active {
+  cursor: grabbing;
+}
+
+[data-reduce-motion="true"] .managed-window-floating,
+[data-reduce-motion="true"] .managed-window-docked {
+  transition: none !important;
+}

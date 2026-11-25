@@ -1,0 +1,135 @@
+.component-service {
+  --component-bg: #eff6ff;
+  --component-color: #2563eb;
+  --component-border: #bfdbfe;
+}
+.component-lib {
+  --component-bg: #f5f3ff;
+  --component-color: #7c3aed;
+  --component-border: #ddd6fe;
+}
+.component-ci {
+  --component-bg: #ecfdf5;
+  --component-color: #059669;
+  --component-border: #a7f3d0;
+}
+.component-tool {
+  --component-bg: #fffbeb;
+  --component-color: #b45309;
+  --component-border: #fde68a;
+}
+.component-module {
+  --component-bg: #f4f4f5;
+  --component-color: #71717a;
+  --component-border: #d4d4d8;
+}
+.component-package {
+  --component-bg: #ecfeff;
+  --component-color: #0e7490;
+  --component-border: #a5f3fc;
+}
+.component-dependency {
+  --component-bg: #fff1f2;
+  --component-color: #be123c;
+  --component-border: #fda4af;
+}
+.architecture-canvas .react-flow__node-default.component-dependency {
+  border-style: dashed;
+}
+.architecture-canvas .react-flow__node-default {
+  background: var(--component-bg, white);
+  border-color: var(--component-border, #e4e4e7);
+}
+.graph-node-label > span {
+  color: var(--component-color, #18181b);
+}
+.architecture-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  color: #71717a;
+  font-size: 11px;
+}
+.architecture-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.architecture-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  background: var(--component-color);
+}
+.architecture-sources {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #71717a;
+}
+.architecture-sources summary {
+  cursor: pointer;
+}
+.architecture-sources[open] {
+  max-height: 140px;
+  overflow: auto;
+}
+
+:is(.dark, [data-theme="dark"]) .component-service,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .component-service {
+    --component-bg: rgba(37, 99, 235, 0.16);
+    --component-color: #60a5fa;
+    --component-border: rgba(96, 165, 250, 0.35);
+  }
+}
+:is(.dark, [data-theme="dark"]) .component-lib,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .component-lib {
+    --component-bg: rgba(124, 58, 237, 0.16);
+    --component-color: #a78bfa;
+    --component-border: rgba(167, 139, 250, 0.35);
+  }
+}
+:is(.dark, [data-theme="dark"]) .component-ci,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .component-ci {
+    --component-bg: rgba(5, 150, 105, 0.16);
+    --component-color: #34d399;
+    --component-border: rgba(52, 211, 153, 0.35);
+  }
+}
+:is(.dark, [data-theme="dark"]) .component-tool,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .component-tool {
+    --component-bg: rgba(180, 83, 9, 0.16);
+    --component-color: #fbbf24;
+    --component-border: rgba(251, 191, 36, 0.35);
+  }
+}
+:is(.dark, [data-theme="dark"]) .component-module,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .component-module {
+    --component-bg: rgba(113, 113, 122, 0.16);
+    --component-color: #d4d4d8;
+    --component-border: rgba(161, 161, 170, 0.35);
+  }
+}
+:is(.dark, [data-theme="dark"]) .component-package,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .component-package {
+    --component-bg: rgba(14, 116, 144, 0.16);
+    --component-color: #22d3ee;
+    --component-border: rgba(34, 211, 238, 0.35);
+  }
+}
+:is(.dark, [data-theme="dark"]) .component-dependency,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .component-dependency {
+    --component-bg: rgba(190, 18, 60, 0.16);
+    --component-color: #fb7185;
+    --component-border: rgba(251, 113, 133, 0.35);
+  }
+}
+

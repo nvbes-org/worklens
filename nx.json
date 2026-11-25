@@ -2,9 +2,52 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "defaultBase": "main",
   "analytics": false,
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "{workspaceRoot}/package.json", "{workspaceRoot}/pnpm-lock.yaml", "{workspaceRoot}/tsconfig.base.json", "{workspaceRoot}/biome.json"],
+    "engineSources": ["{workspaceRoot}/Cargo.toml", "{workspaceRoot}/Cargo.lock", "{workspaceRoot}/crates/**/*", "{workspaceRoot}/apps/desktop/src-tauri/**/*", "{workspaceRoot}/packages/contracts/**/*", "{workspaceRoot}/tests/service.test.mjs", {"runtime": "rustc --version"}, {"runtime": "node --version"}],
+    "desktopSources": ["default", "{workspaceRoot}/packages/contracts/**/*", "{workspaceRoot}/tests/ui/**/*", "{workspaceRoot}/playwright.config.ts"]
+  },
   "targetDefaults": {
-    "check": { "cache": true },
-    "test": { "cache": true },
-    "lint": { "cache": true }
+    "check": {
+      "cache": true
+    },
+    "test": {
+      "cache": true
+    },
+    "lint": {
+      "cache": true
+    }
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/vite/plugin",
+      "options": {
+        "buildTargetName": "build",
+        "serveTargetName": "serve",
+        "devTargetName": "dev",
+        "previewTargetName": "preview",
+        "serveStaticTargetName": "serve-static",
+        "typecheckTargetName": "typecheck",
+        "buildDepsTargetName": "build-deps",
+        "watchDepsTargetName": "watch-deps"
+      }
+    }
+  ],
+  "generators": {
+    "@nx/react": {
+      "application": {
+        "babel": true,
+        "style": "css",
+        "linter": "none",
+        "bundler": "vite"
+      },
+      "component": {
+        "style": "css"
+      },
+      "library": {
+        "style": "css",
+        "linter": "none"
+      }
+    }
   }
 }

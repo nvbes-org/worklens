@@ -1,0 +1,12 @@
+[package]
+name = "aurora-canvas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true

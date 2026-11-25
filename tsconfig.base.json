@@ -11,6 +11,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "baseUrl": ".",
-    "paths": { "@worklens/contracts": ["packages/contracts/src/index.ts"] }
+    "paths": { "@worklens/contracts": ["packages/contracts/src/index.ts"], "@/*": ["apps/desktop/src/*"] }
   }
 }

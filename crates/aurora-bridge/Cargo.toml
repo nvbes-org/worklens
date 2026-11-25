@@ -1,0 +1,15 @@
+[package]
+name = "aurora-bridge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+aurora-blocks = { path = "../aurora-blocks" }
+aurora-mux = { path = "../aurora-mux" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true

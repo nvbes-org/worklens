@@ -1,0 +1,16 @@
+[package]
+name = "worklens"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+worklens-core = { path = "../core" }
+worklens-runtime = { path = "../runtime" }
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+clap = { version = "4", features = ["derive"] }
+rmcp = { version = "3.2", features = ["transport-io"] }
+schemars = "1"
+uuid.workspace = true

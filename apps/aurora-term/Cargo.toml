@@ -1,0 +1,23 @@
+[package]
+name = "aurora-term"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "aurora-term"
+path = "src/main.rs"
+
+[dependencies]
+aurora-core = { path = "../../crates/aurora-core" }
+aurora-blocks = { path = "../../crates/aurora-blocks" }
+aurora-mux = { path = "../../crates/aurora-mux" }
+aurora-render = { path = "../../crates/aurora-render" }
+aurora-canvas = { path = "../../crates/aurora-canvas" }
+aurora-tools = { path = "../../crates/aurora-tools" }
+aurora-bridge = { path = "../../crates/aurora-bridge" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+clap = { version = "4", features = ["derive"] }
+thiserror.workspace = true

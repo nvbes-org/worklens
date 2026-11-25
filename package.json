@@ -12,11 +12,40 @@
     "contracts": "nx run engine:contracts"
   },
   "devDependencies": {
-    "nx": "23.2.1",
+    "@biomejs/biome": "^2.4.0",
+    "@nx/js": "23.2.1",
     "@nx/react": "23.2.1",
     "@nx/vite": "23.2.1",
-    "@biomejs/biome": "^2.4.0",
+    "@nx/web": "23.2.1",
+    "@playwright/test": "^1.63.0",
+    "@swc/helpers": "~0.5.18",
     "@tauri-apps/cli": "2.11.4",
-    "typescript": "~5.9.3"
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "jiti": "2.4.2",
+    "nx": "23.2.1",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/react-query": "^5.102.8",
+    "@tanstack/react-router": "^1.170.34",
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-dialog": "^2.7.3",
+    "@tauri-apps/plugin-opener": "^2.5.5",
+    "@xyflow/react": "^12.11.6",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "elkjs": "^0.12.0",
+    "lucide-react": "^1.44.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.3"
   }
 }
